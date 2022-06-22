@@ -1,0 +1,21 @@
+{
+  "1.19.0": {
+    "files": [
+      {
+        "triplet": "x86_64-linux-gnu",
+        "kind": "apt",
+        "arch": "x86_64",
+        "sha256": "",
+        "os": "linux"
+      },
+      {
+        "triplet": "x86_64-w64-mingw32",
+        "kind": "installer",
+        "arch": "x86_64",
+        "md5sum": "009ab4b49bc8254a107f25e257fb45fa",
+        "os": "win",
+        "url": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/0/64bit/OpenModelica-v1.19.0-64bit.exe"
+      }
+    ]
+  }
+}

@@ -1,11 +1,11 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Setup OpenModelica environment'
+description: 'Set up a OpenModelica environment and add it to the PATH'
+author: 'Andreas Heuermann'
 inputs:
-  milliseconds: # change this
-    required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+  version:
+    description: 'The OpenModelica release version to use. Example: 1.19.0'
+    required: false
+    default: '1.19.0'
 runs:
   using: 'node16'
   main: 'dist/index.js'
