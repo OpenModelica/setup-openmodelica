@@ -13,7 +13,7 @@ On Ubuntu/Debian apt is used to install `omc`.
 ### Inputs
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@main
+- uses: AnHeuermann/setup-openmodelica@v0.1
   with:
     version: '1.19.0'
 ```
