@@ -1,10 +1,9 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+
 import * as fs from 'fs'
-
 import * as os from 'os'
-
-const semver = require('semver')
+import * as semver from 'semver'
 
 // Store information about the environment
 const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
