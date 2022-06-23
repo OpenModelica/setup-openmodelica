@@ -12,7 +12,7 @@ On Ubuntu/Debian apt is used to install `omc`.
 
 ### Inputs
 
-```yml
+```yaml
 - uses: AnHeuermann/setup-openmodelica@main
   with:
     version: '1.19.0'
@@ -76,10 +76,10 @@ You can now validate the action by referencing `./` in a workflow in your repo (
 ```yaml
 uses: ./
 with:
-  milliseconds: 1000
+  version: '1.19.0'
 ```
 
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
+See the [actions tab](https://github.com/AnHeuermann/setup-openmodelica/actions) for runs of this action! :rocket:
 
 ### Usage:
 
