@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
-  "version": "1.0.0",
+  "name": "setup-openmodelica",
+  "version": "0.1.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "Setup OpenModelica Compiler omc",
   "main": "lib/setup-openmodelica.js",
   "scripts": {
     "build": "tsc",
@@ -22,7 +22,7 @@
     "node",
     "setup"
   ],
-  "author": "",
+  "author": "Andreas Heuermann",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.9.0",
