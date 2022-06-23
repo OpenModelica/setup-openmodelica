@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 
 import * as fs from 'fs'
 import * as os from 'os'
+import * as path from 'path'
 import * as semver from 'semver'
 
 // Store information about the environment
@@ -10,10 +11,12 @@ const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux),
 core.debug(`platform: ${osPlat}`)
 
 /**
- * @returns The content of the./versions.json file as object.
+ * @returns The content of the ./versions.json file as object.
  */
 function getOMVersionInfo(): object {
-  const fileContent = fs.readFileSync('./src/versions.json').toString()
+  const fileContent = fs
+    .readFileSync(path.join('resources', 'versions.json'))
+    .toString()
   const json = JSON.parse(fileContent)
   core.debug(json)
   return json
