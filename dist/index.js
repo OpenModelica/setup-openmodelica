@@ -106,7 +106,7 @@ function aptInstallOM(version, releaseType, useSudo) {
         yield exec.exec(`/bin/bash -c "echo deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         // Install OpenModelica
         yield exec.exec(`${sudo} apt update`);
-        yield exec.exec(`${sudo} apt install openmodelica=${version}-1 -V -qy`);
+        yield exec.exec(`${sudo} apt install omc=${version}-1 -V -qy`);
     });
 }
 /**

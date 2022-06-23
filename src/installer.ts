@@ -88,7 +88,7 @@ async function aptInstallOM(
 
   // Install OpenModelica
   await exec.exec(`${sudo} apt update`)
-  await exec.exec(`${sudo} apt install openmodelica=${version}-1 -V -qy`)
+  await exec.exec(`${sudo} apt install omc=${version}-1 -V -qy`)
 }
 
 /**
