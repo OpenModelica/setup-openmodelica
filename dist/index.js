@@ -44,15 +44,19 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
+const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(1383));
 // Store information about the environment
 const osPlat = os.platform(); // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 core.debug(`platform: ${osPlat}`);
 /**
- * @returns The content of the./versions.json file as object.
+ * @returns The content of the ./versions.json file as object.
  */
 function getOMVersionInfo() {
-    const fileContent = fs.readFileSync('./src/versions.json').toString();
+    const resourcesDir = path.join(__dirname, '../resources');
+    const fileContent = fs
+        .readFileSync(path.join(resourcesDir, 'versions.json'))
+        .toString();
     const json = JSON.parse(fileContent);
     core.debug(json);
     return json;
