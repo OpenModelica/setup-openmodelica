@@ -14,8 +14,9 @@ core.debug(`platform: ${osPlat}`)
  * @returns The content of the ./versions.json file as object.
  */
 function getOMVersionInfo(): object {
+  const resourcesDir = path.join(__dirname, '../resources')
   const fileContent = fs
-    .readFileSync(path.join('resources', 'versions.json'))
+    .readFileSync(path.join(resourcesDir, 'versions.json'))
     .toString()
   const json = JSON.parse(fileContent)
   core.debug(json)
