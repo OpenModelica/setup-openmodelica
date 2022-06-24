@@ -11,69 +11,87 @@ const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux),
 core.debug(`platform: ${osPlat}`)
 
 /**
- * @returns The content of the ./versions.json file as object.
+ * @returns An array of all OpenModelica versions available for download / install
  */
-function getOMVersionInfo(): object {
+export function getLinuxOMVersions(): string[] {
+  // parse versions.json
   const resourcesDir = path.join(__dirname, '../resources')
   const fileContent = fs
     .readFileSync(path.join(resourcesDir, 'versions.json'))
     .toString()
   const json = JSON.parse(fileContent)
   core.debug(json)
-  return json
-}
 
-/**
- * @returns An array of all OpenModelica versions available for download / install
- */
-function getOMVersions(): string[] {
-  const versionInfo = getOMVersionInfo()
-  const versions: string[] = []
-
-  for (const ver in versionInfo) {
-    versions.push(ver)
-  }
+  // Get versions
+  const versions = json.linux.releaseVersions
   core.debug(`Available versions: ${versions.toString()}`)
-
   return versions
 }
 
 export function getOMVersion(versionInput: string): string {
-  const availableReleases = getOMVersions()
-  core.debug(`Available versions ${availableReleases}`)
+  let version: string
+  if (osPlat === 'linux') {
+    const availableReleases = getLinuxOMVersions()
+    core.debug(`Available versions ${availableReleases}`)
 
-  // Use the highest available version that matches versionInput
-  const version = semver.maxSatisfying(availableReleases, versionInput)
-  if (version == null) {
-    throw new Error(
-      `Could not find a OpenModelica version that matches ${versionInput}`
-    )
+    // Use the highest available version that matches versionInput
+    const maxVersion = semver.maxSatisfying(availableReleases, versionInput)
+    if (maxVersion == null) {
+      throw new Error(
+        `Could not find a OpenModelica version that matches ${versionInput}`
+      )
+    }
+    version = maxVersion
+  } else {
+    version = versionInput
   }
 
   return version
 }
 
 /**
+ * Install omc with apt.
  *
  * @param version       Version of OpenModelica to install
  * @param releaseType   One of 'release', 'stable' or 'nightly'
+ * @param bit           String specifying 32 or 64 bit version.
  * @param useSudo       true if root rights are required
  */
 async function aptInstallOM(
   version: string,
   releaseType: string,
+  bit: string,
   useSudo: boolean
 ): Promise<void> {
-  const availableReleases = ['release', 'stable', 'nightly']
-  if (!availableReleases.includes(releaseType)) {
-    throw new Error(`Not a valid release type ${releaseType}`)
-  }
-
   let sudo: string
   if (useSudo) {
     sudo = 'sudo'
   } else {
     sudo = ''
+  }
+
+  // Get architecture
+  const out = await exec.getExecOutput(
+    `/bin/bash -c "dpkg --print-architecture"`
+  )
+  let arch = out.stdout.trim()
+  switch (arch) {
+    case 'amd64':
+      if (bit === '32') arch = 'i386'
+      break
+    case 'arm64':
+      if (bit === '32') arch = 'armhf'
+      break
+    case 'armhf':
+      if (bit === '64')
+        throw new Error(`Architecture is "armhf", 64bit not supported.`)
+      break
+    case 'i386':
+      if (bit === '64')
+        throw new Error(`Architecture is "i386", 64bit not supported.`)
+      break
+    default:
+      throw new Error(`Unknown architecture ${arch}.`)
   }
 
   // Rmove old previous openmodelica.list
@@ -87,23 +105,35 @@ async function aptInstallOM(
   )
 
   await exec.exec(
-    `/bin/bash -c "echo deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
+    `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
   )
 
   // Install OpenModelica
   await exec.exec(`${sudo} apt update`)
-  await exec.exec(`${sudo} apt install omc=${version}-1 -V -qy`)
+  if (releaseType === 'nightly') {
+    await exec.exec(`/bin/bash -c "${sudo} apt install omc -qy"`)
+  } else {
+    await exec.exec(
+      `/bin/bash -c "${sudo} apt install omc=${version}-1 -V -qy"`
+    )
+  }
 }
 
 /**
  * Install OpenModelica
  *
- * @param version   Version of OpenModelcia to be installed
+ * @param version             Version of OpenModelcia to be installed.
+ * @param releaseType         Release, stable release or nightly build.
+ * @param architectureInput   64 or 32 bit.
  */
-export async function installOM(version: string): Promise<void> {
+export async function installOM(
+  version: string,
+  releaseType: string,
+  architectureInput: string
+): Promise<void> {
   switch (osPlat) {
     case 'linux':
-      await aptInstallOM(version, 'release', true)
+      await aptInstallOM(version, releaseType, architectureInput, true)
       break
     default:
       throw new Error(`Platform ${osPlat} is not supported`)

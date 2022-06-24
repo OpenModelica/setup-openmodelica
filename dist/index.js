@@ -39,7 +39,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.showVersion = exports.installOM = exports.getOMVersion = void 0;
+exports.showVersion = exports.installOM = exports.getOMVersion = exports.getLinuxOMVersions = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const fs = __importStar(__nccwpck_require__(7147));
@@ -50,52 +50,50 @@ const semver = __importStar(__nccwpck_require__(1383));
 const osPlat = os.platform(); // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 core.debug(`platform: ${osPlat}`);
 /**
- * @returns The content of the ./versions.json file as object.
+ * @returns An array of all OpenModelica versions available for download / install
  */
-function getOMVersionInfo() {
+function getLinuxOMVersions() {
+    // parse versions.json
     const resourcesDir = path.join(__dirname, '../resources');
     const fileContent = fs
         .readFileSync(path.join(resourcesDir, 'versions.json'))
         .toString();
     const json = JSON.parse(fileContent);
     core.debug(json);
-    return json;
-}
-/**
- * @returns An array of all OpenModelica versions available for download / install
- */
-function getOMVersions() {
-    const versionInfo = getOMVersionInfo();
-    const versions = [];
-    for (const ver in versionInfo) {
-        versions.push(ver);
-    }
+    // Get versions
+    const versions = json.linux.releaseVersions;
     core.debug(`Available versions: ${versions.toString()}`);
     return versions;
 }
+exports.getLinuxOMVersions = getLinuxOMVersions;
 function getOMVersion(versionInput) {
-    const availableReleases = getOMVersions();
-    core.debug(`Available versions ${availableReleases}`);
-    // Use the highest available version that matches versionInput
-    const version = semver.maxSatisfying(availableReleases, versionInput);
-    if (version == null) {
-        throw new Error(`Could not find a OpenModelica version that matches ${versionInput}`);
+    let version;
+    if (osPlat === 'linux') {
+        const availableReleases = getLinuxOMVersions();
+        core.debug(`Available versions ${availableReleases}`);
+        // Use the highest available version that matches versionInput
+        const maxVersion = semver.maxSatisfying(availableReleases, versionInput);
+        if (maxVersion == null) {
+            throw new Error(`Could not find a OpenModelica version that matches ${versionInput}`);
+        }
+        version = maxVersion;
+    }
+    else {
+        version = versionInput;
     }
     return version;
 }
 exports.getOMVersion = getOMVersion;
 /**
+ * Install omc with apt.
  *
  * @param version       Version of OpenModelica to install
  * @param releaseType   One of 'release', 'stable' or 'nightly'
+ * @param bit           String specifying 32 or 64 bit version.
  * @param useSudo       true if root rights are required
  */
-function aptInstallOM(version, releaseType, useSudo) {
+function aptInstallOM(version, releaseType, bit, useSudo) {
     return __awaiter(this, void 0, void 0, function* () {
-        const availableReleases = ['release', 'stable', 'nightly'];
-        if (!availableReleases.includes(releaseType)) {
-            throw new Error(`Not a valid release type ${releaseType}`);
-        }
         let sudo;
         if (useSudo) {
             sudo = 'sudo';
@@ -103,26 +101,56 @@ function aptInstallOM(version, releaseType, useSudo) {
         else {
             sudo = '';
         }
+        // Get architecture
+        const out = yield exec.getExecOutput(`/bin/bash -c "dpkg --print-architecture"`);
+        let arch = out.stdout.trim();
+        switch (arch) {
+            case 'amd64':
+                if (bit === '32')
+                    arch = 'i386';
+                break;
+            case 'arm64':
+                if (bit === '32')
+                    arch = 'armhf';
+                break;
+            case 'armhf':
+                if (bit === '64')
+                    throw new Error(`Architecture is "armhf", 64bit not supported.`);
+                break;
+            case 'i386':
+                if (bit === '64')
+                    throw new Error(`Architecture is "i386", 64bit not supported.`);
+                break;
+            default:
+                throw new Error(`Unknown architecture ${arch}.`);
+        }
         // Rmove old previous openmodelica.list
         yield exec.exec(`/bin/bash -c "sudo rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`);
         // Add OpenModelica PGP public key
         yield exec.exec(`/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`);
-        yield exec.exec(`/bin/bash -c "echo deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
+        yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         // Install OpenModelica
         yield exec.exec(`${sudo} apt update`);
-        yield exec.exec(`${sudo} apt install omc=${version}-1 -V -qy`);
+        if (releaseType === 'nightly') {
+            yield exec.exec(`/bin/bash -c "${sudo} apt install omc -qy"`);
+        }
+        else {
+            yield exec.exec(`/bin/bash -c "${sudo} apt install omc=${version}-1 -V -qy"`);
+        }
     });
 }
 /**
  * Install OpenModelica
  *
- * @param version   Version of OpenModelcia to be installed
+ * @param version             Version of OpenModelcia to be installed.
+ * @param releaseType         Release, stable release or nightly build.
+ * @param architectureInput   64 or 32 bit.
  */
-function installOM(version) {
+function installOM(version, releaseType, architectureInput) {
     return __awaiter(this, void 0, void 0, function* () {
         switch (osPlat) {
             case 'linux':
-                yield aptInstallOM(version, 'release', true);
+                yield aptInstallOM(version, releaseType, architectureInput, true);
                 break;
             default:
                 throw new Error(`Platform ${osPlat} is not supported`);
@@ -193,13 +221,20 @@ function run() {
             core.debug('Starting run');
             // Inputs
             const versionInput = core.getInput('version');
-            if (!versionInput) {
-                throw new Error('Version input must not be null');
+            const releaseType = core.getInput('releaseType');
+            const availableReleases = ['release', 'stable', 'nightly'];
+            if (!availableReleases.includes(releaseType)) {
+                throw new Error(`Not a valid release type ${releaseType}`);
+            }
+            const architectureInput = core.getInput('architecture');
+            const availableArchitectures = ['64', '32'];
+            if (!availableArchitectures.includes(architectureInput)) {
+                throw new Error(`Not a valid release type ${architectureInput}`);
             }
             const version = installer.getOMVersion(versionInput);
             core.debug(`Installing OpenModelica ${version}`);
             // Install OpenModelica
-            yield installer.installOM(versionInput);
+            yield installer.installOM(version, releaseType, architectureInput);
             // TODO: Cache OpenModelica
             // Test if OpenModelica is installed
             yield installer.showVersion();

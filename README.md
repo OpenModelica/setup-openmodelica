@@ -12,75 +12,47 @@ On Ubuntu/Debian apt is used to install `omc`.
 
 ### Inputs
 
-```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.1
-  with:
-    version: '1.19.0'
-```
+  - `version`: Version of OpenModelica to install.
+               For example `'1.19'` or `'1.19.0'`.
+  - `releaseType`: Release type of OpenModelica.
+                   Can be `'release'`, `'stable'` or `'nightly'`.
+                   When `releaseType` is nightly the version is ignored.
+  - `architecture`: Choose between 64 and 32 bit architecture.
+                    Can be `'64'` and `'32'`.
 
 ## Available OpenModelica versions
 
-| Version      | Release Type | OS           | Arch       | Available |
-|--------------|--------------|--------------|------------|-----------|
-| 1.20.0-dev   | nightly      | Ubuntu Focal | amd64      | ❌       |
-| 1.19.0       | release      | Ubuntu Focal | amd64      | ✔️       |
-| 1.19.0       | release      | Windows 10   | x86_x64    | ❌       |
+| Version      | Release Type | OS      | Arch                      | Available |
+|--------------|--------------|---------|---------------------------|-----------|
+| 1.20.0-dev   | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.19.0       | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.18.1       | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.18.0       | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.17.0       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.16.5       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.16.4       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.16.2       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.16.1       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.16.0       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.14.2       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.14.1       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| 1.13.2       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+| all          | release      | Windows | x86_x64, i386             | ❌       |
+| all          | release      | Mac     | all                       | ❌       |
 
-## Developing this action
+✔️: Available
+☑️: Available, but untested
+❌: Not available
 
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
+## Examples
+```yaml
+- uses: AnHeuermann/setup-openmodelica@v0.2
+  with:
+    version: '1.19'
 ```
-
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
-
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-### Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-### Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
 
 ```yaml
-uses: ./
-with:
-  version: '1.19.0'
+- uses: AnHeuermann/setup-openmodelica@v0.2
+  with:
+    releaseType: 'nightly'
 ```
-
-See the [actions tab](https://github.com/AnHeuermann/setup-openmodelica/actions) for runs of this action! :rocket:
-
-### Usage:
-
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
