@@ -7,16 +7,22 @@ export async function run(): Promise<void> {
     core.debug('Starting run')
     // Inputs
     const versionInput = core.getInput('version')
-
-    if (!versionInput) {
-      throw new Error('Version input must not be null')
+    const releaseType = core.getInput('releaseType')
+    const availableReleases = ['release', 'stable', 'nightly']
+    if (!availableReleases.includes(releaseType)) {
+      throw new Error(`Not a valid release type ${releaseType}`)
+    }
+    const architectureInput = core.getInput('architecture')
+    const availableArchitectures = ['64', '32']
+    if (!availableArchitectures.includes(architectureInput)) {
+      throw new Error(`Not a valid release type ${architectureInput}`)
     }
 
     const version = installer.getOMVersion(versionInput)
     core.debug(`Installing OpenModelica ${version}`)
 
     // Install OpenModelica
-    await installer.installOM(versionInput)
+    await installer.installOM(version, releaseType, architectureInput)
 
     // TODO: Cache OpenModelica
 

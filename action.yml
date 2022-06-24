@@ -3,9 +3,22 @@ description: 'Set up a OpenModelica environment and add it to the PATH'
 author: 'Andreas Heuermann'
 inputs:
   version:
-    description: 'The OpenModelica release version to use. Example: 1.19.0'
+    description: 'The OpenModelica release version to use.
+                  Example: "1.19.0" for version 1.19.0
+                           or "" for latest version of chosen release type'
     required: false
     default: '1.19.0'
+  releaseType:
+    description: 'The release type of the OpenModelica version.
+                  Can be one of "release", "stable" or "nightly".
+                  For nightly build version is ignored.'
+    required: false
+    default: 'release'
+  architecture: 
+    description: 'The architecture of Openmodelica to be used.
+                  Can be "64" or "32".'
+    required: false
+    default: '64'
 runs:
   using: 'node16'
   main: 'dist/index.js'
