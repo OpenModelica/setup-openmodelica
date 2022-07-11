@@ -128,19 +128,19 @@ function aptInstallOM(version, releaseType, bit, useSudo) {
         yield exec.exec(`/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`);
         // Add OpenModelica PGP public key
         yield exec.exec(`/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`);
-        if (releaseType === "release") {
+        if (releaseType === 'release') {
             yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/omc/builds/linux/releases/${version}/ ${'`'}lsb_release -cs${'`'} release ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         }
         else {
             yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         }
         // Install OpenModelica
-        yield exec.exec(`${sudo} apt update`);
+        yield exec.exec(`${sudo} apt-get update`);
         if (releaseType === 'nightly') {
-            yield exec.exec(`/bin/bash -c "${sudo} apt install omc -qy"`);
+            yield exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`);
         }
         else {
-            yield exec.exec(`/bin/bash -c "${sudo} apt install omc=${version}-1 -V -qy"`);
+            yield exec.exec(`/bin/bash -c "${sudo} apt-get install omc=${version}-1 -V -qy"`);
         }
     });
 }
@@ -173,7 +173,8 @@ function showVersion() {
             core.debug(`Error message: ${out.stderr}`);
             throw new Error(`OpenModelica could not be installed properly. Exit code: ${out.exitCode}`);
         }
-        return out.stdout.trim();
+        const version = out.stdout.trim().split(' ')[1];
+        return version;
     });
 }
 exports.showVersion = showVersion;
@@ -247,7 +248,7 @@ function run() {
             yield installer.showVersion();
         }
         catch (error) {
-            core.debug('Catched error');
+            core.debug('Caught error');
             if (error instanceof Error)
                 core.setFailed(error.message);
         }
