@@ -96,7 +96,7 @@ async function aptInstallOM(
 
   // Rmove old previous openmodelica.list
   await exec.exec(
-    `/bin/bash -c "sudo rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`
+    `/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`
   )
 
   // Add OpenModelica PGP public key
@@ -104,17 +104,23 @@ async function aptInstallOM(
     `/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`
   )
 
-  await exec.exec(
-    `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
-  )
-
-  // Install OpenModelica
-  await exec.exec(`${sudo} apt update`)
-  if (releaseType === 'nightly') {
-    await exec.exec(`/bin/bash -c "${sudo} apt install omc -qy"`)
+  if (releaseType === 'release') {
+    await exec.exec(
+      `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/omc/builds/linux/releases/${version}/ ${'`'}lsb_release -cs${'`'} release ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
+    )
   } else {
     await exec.exec(
-      `/bin/bash -c "${sudo} apt install omc=${version}-1 -V -qy"`
+      `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
+    )
+  }
+
+  // Install OpenModelica
+  await exec.exec(`${sudo} apt-get update`)
+  if (releaseType === 'nightly') {
+    await exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`)
+  } else {
+    await exec.exec(
+      `/bin/bash -c "${sudo} apt-get install omc=${version}-1 -V -qy"`
     )
   }
 }
@@ -143,12 +149,16 @@ export async function installOM(
 /**
  * Test if omc has been installed and print the version.
  */
-export async function showVersion(): Promise<void> {
-  const exitCode = await exec.exec('omc', ['--version'])
+export async function showVersion(): Promise<string> {
+  const out = await exec.getExecOutput('omc', ['--version'])
 
-  if (exitCode !== 0) {
+  if (out.exitCode !== 0) {
+    core.debug(`Error message: ${out.stderr}`)
     throw new Error(
-      `OpenModelica could not be installed properly. Exit code: ${exitCode}`
+      `OpenModelica could not be installed properly. Exit code: ${out.exitCode}`
     )
   }
+
+  const version = out.stdout.trim().split(' ')[1]
+  return version
 }
