@@ -29,7 +29,7 @@ export async function run(): Promise<void> {
     // Test if OpenModelica is installed
     await installer.showVersion()
   } catch (error) {
-    core.debug('Catched error')
+    core.debug('Caught error')
     if (error instanceof Error) core.setFailed(error.message)
   }
 }

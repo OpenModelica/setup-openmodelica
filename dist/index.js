@@ -125,10 +125,15 @@ function aptInstallOM(version, releaseType, bit, useSudo) {
                 throw new Error(`Unknown architecture ${arch}.`);
         }
         // Rmove old previous openmodelica.list
-        yield exec.exec(`/bin/bash -c "sudo rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`);
+        yield exec.exec(`/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`);
         // Add OpenModelica PGP public key
         yield exec.exec(`/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`);
-        yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
+        if (releaseType === "release") {
+            yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/omc/builds/linux/releases/${version}/ ${'`'}lsb_release -cs${'`'} release ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
+        }
+        else {
+            yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
+        }
         // Install OpenModelica
         yield exec.exec(`${sudo} apt update`);
         if (releaseType === 'nightly') {
@@ -163,10 +168,12 @@ exports.installOM = installOM;
  */
 function showVersion() {
     return __awaiter(this, void 0, void 0, function* () {
-        const exitCode = yield exec.exec('omc', ['--version']);
-        if (exitCode !== 0) {
-            throw new Error(`OpenModelica could not be installed properly. Exit code: ${exitCode}`);
+        const out = yield exec.getExecOutput('omc', ['--version']);
+        if (out.exitCode !== 0) {
+            core.debug(`Error message: ${out.stderr}`);
+            throw new Error(`OpenModelica could not be installed properly. Exit code: ${out.exitCode}`);
         }
+        return out.stdout.trim();
     });
 }
 exports.showVersion = showVersion;
