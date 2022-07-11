@@ -25,7 +25,7 @@ On Ubuntu/Debian apt is used to install `omc`.
 | Version      | Release Type | OS      | Arch                      | Available |
 |--------------|--------------|---------|---------------------------|-----------|
 | 1.20.0-dev   | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
-| 1.19.0       | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.19.2       | stable       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.18.1       | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.18.0       | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.17.0       | release      | Linux   | amd64, arm64, armhf, i386 | ☑️       |
