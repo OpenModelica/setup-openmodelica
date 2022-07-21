@@ -6,12 +6,11 @@ export async function run(): Promise<void> {
   try {
     core.debug('Starting run')
     // Inputs
-    const versionInput = core.getInput('version')
-    const releaseType = core.getInput('releaseType')
-    const availableReleases = ['release', 'stable', 'nightly']
-    if (!availableReleases.includes(releaseType)) {
-      throw new Error(`Not a valid release type ${releaseType}`)
+    let versionInput: string = core.getInput('version')
+    if (!versionInput) {
+      versionInput = 'release'
     }
+
     const architectureInput = core.getInput('architecture')
     const availableArchitectures = ['64', '32']
     if (!availableArchitectures.includes(architectureInput)) {
@@ -19,10 +18,10 @@ export async function run(): Promise<void> {
     }
 
     const version = installer.getOMVersion(versionInput)
-    core.debug(`Installing OpenModelica ${version}`)
+    core.debug(`Installing OpenModelica ${version.version}`)
 
     // Install OpenModelica
-    await installer.installOM(version, releaseType, architectureInput)
+    await installer.installOM(version, architectureInput)
 
     // TODO: Cache OpenModelica
 
