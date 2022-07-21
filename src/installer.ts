@@ -1,10 +1,17 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
-import * as fs from 'fs'
 import * as os from 'os'
-import * as path from 'path'
 import * as semver from 'semver'
+
+import json from './versions.json'
+
+export type VersionType = {
+  version: string
+  aptname?: string
+  type: string
+  address: string
+}
 
 // Store information about the environment
 const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
@@ -14,52 +21,61 @@ core.debug(`platform: ${osPlat}`)
  * @returns An array of all OpenModelica versions available for download / install
  */
 export function getLinuxOMVersions(): string[] {
-  // parse versions.json
-  const resourcesDir = path.join(__dirname, '../resources')
-  const fileContent = fs
-    .readFileSync(path.join(resourcesDir, 'versions.json'))
-    .toString()
-  const json = JSON.parse(fileContent)
-  core.debug(json)
-
   // Get versions
-  const versions = json.linux.releaseVersions
+  const versions: string[] = []
+
+  for (const ver of json.linux) {
+    versions.push(ver.version)
+  }
+
   core.debug(`Available versions: ${versions.toString()}`)
   return versions
 }
 
-export function getOMVersion(versionInput: string): string {
-  let version: string
+export function getOMVersion(versionInput: string): VersionType {
   if (osPlat === 'linux') {
-    const availableReleases = getLinuxOMVersions()
-    core.debug(`Available versions ${availableReleases}`)
-
-    // Use the highest available version that matches versionInput
-    const maxVersion = semver.maxSatisfying(availableReleases, versionInput)
-    if (maxVersion == null) {
-      throw new Error(
-        `Could not find a OpenModelica version that matches ${versionInput}`
-      )
+    let maxVersion: string | null
+    if (
+      versionInput === 'nightly' ||
+      versionInput === 'stable' ||
+      versionInput === 'release'
+    ) {
+      maxVersion = versionInput
+    } else {
+      // Use the highest available version that matches versionInput
+      const availableReleases = getLinuxOMVersions()
+      core.debug(`Available versions ${availableReleases}`)
+      maxVersion = semver.maxSatisfying(availableReleases, versionInput)
+      if (maxVersion == null) {
+        throw new Error(
+          `Could not find a OpenModelica version that matches ${versionInput}`
+        )
+      }
     }
-    version = maxVersion
-  } else {
-    version = versionInput
-  }
+    core.debug(
+      `Searching for ${versionInput}, found max version: ${maxVersion}`
+    )
 
-  return version
+    for (const ver of json.linux) {
+      if (ver.version === maxVersion) {
+        return ver
+      }
+    }
+    throw new Error(`Could not find version ${maxVersion} in database.`)
+  } else {
+    throw new Error(`OS ${osPlat} not supported yet.`)
+  }
 }
 
 /**
  * Install omc with apt.
  *
- * @param version       Version of OpenModelica to install
- * @param releaseType   One of 'release', 'stable' or 'nightly'
+ * @param version       Version object to install.
  * @param bit           String specifying 32 or 64 bit version.
- * @param useSudo       true if root rights are required
+ * @param useSudo       true if root rights are required.
  */
 async function aptInstallOM(
-  version: string,
-  releaseType: string,
+  version: VersionType,
   bit: string,
   useSudo: boolean
 ): Promise<void> {
@@ -104,23 +120,19 @@ async function aptInstallOM(
     `/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`
   )
 
-  if (releaseType === 'release') {
-    await exec.exec(
-      `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/omc/builds/linux/releases/${version}/ ${'`'}lsb_release -cs${'`'} release ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
-    )
-  } else {
-    await exec.exec(
-      `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt ${'`'}lsb_release -cs${'`'} ${releaseType} ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
-    )
-  }
+  await exec.exec(
+    `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] \
+    ${version.address} ${'`'}lsb_release -cs${'`'} ${version.type} \
+    ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
+  )
 
   // Install OpenModelica
   await exec.exec(`${sudo} apt-get update`)
-  if (releaseType === 'nightly') {
+  if (version.type === 'nightly' || !version.aptname) {
     await exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`)
   } else {
     await exec.exec(
-      `/bin/bash -c "${sudo} apt-get install omc=${version}-1 -V -qy"`
+      `/bin/bash -c "${sudo} apt-get install omc=${version.aptname} -V -qy"`
     )
   }
 }
@@ -129,17 +141,15 @@ async function aptInstallOM(
  * Install OpenModelica
  *
  * @param version             Version of OpenModelcia to be installed.
- * @param releaseType         Release, stable release or nightly build.
  * @param architectureInput   64 or 32 bit.
  */
 export async function installOM(
-  version: string,
-  releaseType: string,
+  version: VersionType,
   architectureInput: string
 ): Promise<void> {
   switch (osPlat) {
     case 'linux':
-      await aptInstallOM(version, releaseType, architectureInput, true)
+      await aptInstallOM(version, architectureInput, true)
       break
     default:
       throw new Error(`Platform ${osPlat} is not supported`)
