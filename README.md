@@ -47,19 +47,19 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 
 ## Examples
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@master
+- uses: AnHeuermann/setup-openmodelica@main
   with:
     version: '1.18'
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@master
+- uses: AnHeuermann/setup-openmodelica@main
   with:
     version: 'nightly'
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@master
+- uses: AnHeuermann/setup-openmodelica@main
   with:
     version: 'stable'
 ```
