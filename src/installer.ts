@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
+import * as fs from 'fs'
 import * as os from 'os'
 import * as semver from 'semver'
 
@@ -10,6 +11,7 @@ export type VersionType = {
   version: string
   aptname?: string
   type: string
+  arch?: string
   address: string
 }
 
@@ -138,6 +140,41 @@ async function aptInstallOM(
 }
 
 /**
+ * Install omc with PowerShell using the Windows installer.
+ *
+ * @param version       Version object to install.
+ * @param bit           String specifying 32 or 64 bit version.
+ */
+async function winInstallOM(version: VersionType, bit: string): Promise<void> {
+  await exec.exec(
+    `PowerShell -Command "Start-BitsTransfer -Source ${version.address} -Destination tmp"`
+  )
+
+  if (bit !== version.arch) {
+    throw new Error(`Architecture doesn't match architecture of version.`)
+  }
+
+  let installer: string
+  installer = ""
+  const files = fs.readdirSync("tmp")
+  for (var file of files) {
+    if (file.endsWith(".exe")) {
+      installer = file
+      break
+    }
+  }
+  if(!installer) {
+    throw new Error(`Couldn't find installer executable in tmp`)
+  }
+
+  await exec.exec(
+    `PowerShell -Command {Start-Process -FilePath "${installer}" -Verb runAs -ArgumentList '/S','/v','/qn'}`
+  )
+
+  fs.rm("tmp")
+}
+
+/**
  * Install OpenModelica
  *
  * @param version             Version of OpenModelcia to be installed.
@@ -150,6 +187,9 @@ export async function installOM(
   switch (osPlat) {
     case 'linux':
       await aptInstallOM(version, architectureInput, true)
+      break
+    case 'windows':
+      await winInstallOM(version, architectureInput)
       break
     default:
       throw new Error(`Platform ${osPlat} is not supported`)
