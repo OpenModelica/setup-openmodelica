@@ -7,6 +7,18 @@
       "address": "https://build.openmodelica.org/omc/builds/windows/nightly-builds/64bit/OpenModelica-latest.exe"
     },
     {
+      "version": "stable",
+      "type": "stable",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"
+    },
+    {
+      "version": "release",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"
+    },
+    {
       "version": "1.19.2",
       "type": "release",
       "arch": "64",
