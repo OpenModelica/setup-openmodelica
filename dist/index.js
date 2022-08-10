@@ -252,7 +252,6 @@ function showVersion() {
             throw new Error(`OpenModelica could not be installed properly. Exit code: ${out.exitCode}`);
         }
         const version = out.stdout.trim().split(' ')[1];
-        core.info(`OpenModelica ${version}`);
         return version;
     });
 }

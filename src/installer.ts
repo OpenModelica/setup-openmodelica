@@ -254,6 +254,5 @@ export async function showVersion(): Promise<string> {
   }
 
   const version = out.stdout.trim().split(' ')[1]
-  core.info(`OpenModelica ${version}`)
   return version
 }
