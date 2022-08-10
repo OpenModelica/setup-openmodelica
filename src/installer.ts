@@ -3,9 +3,11 @@ import * as exec from '@actions/exec'
 
 import * as fs from 'fs'
 import * as os from 'os'
+import * as path from 'path'
 import * as semver from 'semver'
 
 import json from './versions.json'
+import * as util from './util'
 
 export type VersionType = {
   version: string
@@ -22,11 +24,23 @@ core.debug(`platform: ${osPlat}`)
 /**
  * @returns An array of all OpenModelica versions available for download / install
  */
-export function getLinuxOMVersions(): string[] {
+export function getOMVersions(): string[] {
   // Get versions
   const versions: string[] = []
 
-  for (const ver of json.linux) {
+  let osVersionLst: VersionType[] = []
+  switch (osPlat) {
+    case 'linux':
+      osVersionLst = json.linux
+      break
+    case 'win32':
+      osVersionLst = json.windows
+      break
+    default:
+      // Array stays empty
+  }
+
+  for (const ver of osVersionLst) {
     versions.push(ver.version)
   }
 
@@ -34,39 +48,56 @@ export function getLinuxOMVersions(): string[] {
   return versions
 }
 
+/**
+ * @param versionInput Version to find
+ * @returns Highest available version matching versionInput.
+ */
 export function getOMVersion(versionInput: string): VersionType {
-  if (osPlat === 'linux') {
-    let maxVersion: string | null
-    if (
-      versionInput === 'nightly' ||
-      versionInput === 'stable' ||
-      versionInput === 'release'
-    ) {
-      maxVersion = versionInput
-    } else {
-      // Use the highest available version that matches versionInput
-      const availableReleases = getLinuxOMVersions()
-      core.debug(`Available versions ${availableReleases}`)
-      maxVersion = semver.maxSatisfying(availableReleases, versionInput)
-      if (maxVersion == null) {
-        throw new Error(
-          `Could not find a OpenModelica version that matches ${versionInput}`
-        )
-      }
-    }
-    core.debug(
-      `Searching for ${versionInput}, found max version: ${maxVersion}`
-    )
-
-    for (const ver of json.linux) {
-      if (ver.version === maxVersion) {
-        return ver
-      }
-    }
-    throw new Error(`Could not find version ${maxVersion} in database.`)
-  } else {
-    throw new Error(`OS ${osPlat} not supported yet.`)
+  if (osPlat != 'linux' && osPlat != 'win32') {
+    throw new Error(`getOMVersion: OS ${osPlat} not supported.`)
   }
+
+  let maxVersion: string | null
+
+  if (
+    versionInput === 'nightly' ||
+    versionInput === 'stable' ||
+    versionInput === 'release'
+  ) {
+    maxVersion = versionInput
+  } else {
+    // Use the highest available version that matches versionInput
+    const availableReleases = getOMVersions()
+    core.debug(`Available versions ${availableReleases}`)
+    maxVersion = semver.maxSatisfying(availableReleases, versionInput)
+    if (maxVersion == null) {
+      throw new Error(
+        `Could not find a OpenModelica version that matches ${versionInput}`
+      )
+    }
+  }
+  core.debug(
+    `Searching for ${versionInput}, found max version: ${maxVersion}`
+  )
+
+  // Return highest version from versions.json
+  let osVersionLst: VersionType[] = []
+  switch (osPlat) {
+    case 'linux':
+      osVersionLst = json.linux
+      break
+    case 'win32':
+      osVersionLst = json.windows
+      break
+    default:
+      // Array stays empty
+  }
+  for (const ver of osVersionLst) {
+    if (ver.version === maxVersion) {
+      return ver
+    }
+  }
+  throw new Error(`Could not find version ${maxVersion} in database.`)
 }
 
 /**
@@ -112,7 +143,7 @@ async function aptInstallOM(
       throw new Error(`Unknown architecture ${arch}.`)
   }
 
-  // Rmove old previous openmodelica.list
+  // Remove old previous openmodelica.list
   await exec.exec(
     `/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`
   )
@@ -140,44 +171,57 @@ async function aptInstallOM(
 }
 
 /**
- * Install omc with PowerShell using the Windows installer.
+ * Install omc using the Windows installer executable.
  *
  * @param version       Version object to install.
  * @param bit           String specifying 32 or 64 bit version.
  */
 async function winInstallOM(version: VersionType, bit: string): Promise<void> {
-  await exec.exec(
-    `PowerShell -Command "Start-BitsTransfer -Source ${version.address} -Destination tmp"`
-  )
+  // Download OpenModelica installer to tmp/
+  core.debug(`Downloading installer from ${version.address}`)
+  await util.downloadSync(version.address, "tmp/installer.exe")
+  core.debug(`Finished download!`)
 
   if (bit !== version.arch) {
     throw new Error(`Architecture doesn't match architecture of version.`)
   }
 
+  // Find installer
   let installer: string
   installer = ""
-  const files = fs.readdirSync("tmp")
-  for (var file of files) {
-    if (file.endsWith(".exe")) {
-      installer = file
+  let content = fs.readdirSync("tmp")
+  for (var f of content) {
+    if (f.endsWith(".exe")) {
+      installer = path.resolve("tmp", f)
       break
     }
   }
-  if(!installer) {
+  if(!fs.lstatSync(installer).isFile()) {
     throw new Error(`Couldn't find installer executable in tmp`)
   }
 
+  // Run installer
+  core.debug(`Running installer ${installer}`)
   await exec.exec(
-    `PowerShell -Command {Start-Process -FilePath "${installer}" -Verb runAs -ArgumentList '/S','/v','/qn'}`
+    `${installer} /S /v /qn`
   )
 
-  fs.rm("tmp")
+  // Add OpenModelica to PATH
+  const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
+    return fs.lstatSync("C:\\Program Files\\"+'/'+file).isDirectory() && file.startsWith("OpenModelica");
+  })
+  const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin")
+  core.debug(`Adding ${pathToOmc} to PATH`)
+  core.addPath(pathToOmc);
+
+  // Clean up
+  fs.rmSync("tmp", { recursive:true })
 }
 
 /**
  * Install OpenModelica
  *
- * @param version             Version of OpenModelcia to be installed.
+ * @param version             Version of OpenModelica to be installed.
  * @param architectureInput   64 or 32 bit.
  */
 export async function installOM(
@@ -188,7 +232,7 @@ export async function installOM(
     case 'linux':
       await aptInstallOM(version, architectureInput, true)
       break
-    case 'windows':
+    case 'win32':
       await winInstallOM(version, architectureInput)
       break
     default:
@@ -210,5 +254,6 @@ export async function showVersion(): Promise<string> {
   }
 
   const version = out.stdout.trim().split(' ')[1]
+  core.info(`OpenModelica ${version}`)
   return version
 }

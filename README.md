@@ -38,7 +38,15 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 | 1.14.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.14.1       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.13.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
-| all          | Windows | x86_x64, i386             | ❌       |
+| nightly      | Windows | x86_x64                   | ☑️       |
+| stable       | Windows | x86_x64                   | ☑️       |
+| release      | Windows | x86_x64                   | ☑️       |
+| 1.19.2       | Windows | x86_x64                   | ✔️       |
+| 1.19.0       | Windows | x86_x64                   | ☑️       |
+| 1.18.1       | Windows | x86_x64                   | ☑️       |
+| 1.18.0       | Windows | x86_x64                   | ☑️       |
+| 1.17.0       | Windows | x86_x64                   | ☑️       |
+| all          | Windows | i386                      | ❌       |
 | all          | Mac     | all                       | ❌       |
 
 ✔️: Available
