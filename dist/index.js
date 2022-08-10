@@ -83,7 +83,7 @@ exports.getOMVersions = getOMVersions;
  * @returns Highest available version matching versionInput.
  */
 function getOMVersion(versionInput) {
-    if (osPlat != 'linux' && osPlat != 'win32') {
+    if (osPlat !== 'linux' && osPlat !== 'win32') {
         throw new Error(`getOMVersion: OS ${osPlat} not supported.`);
     }
     let maxVersion;
@@ -196,8 +196,8 @@ function winInstallOM(version, bit) {
         // Find installer
         let installer;
         installer = "";
-        let content = fs.readdirSync("tmp");
-        for (var f of content) {
+        const content = fs.readdirSync("tmp");
+        for (const f of content) {
             if (f.endsWith(".exe")) {
                 installer = path.resolve("tmp", f);
                 break;
@@ -211,7 +211,7 @@ function winInstallOM(version, bit) {
         yield exec.exec(`${installer} /S /v /qn`);
         // Add OpenModelica to PATH
         const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
-            return fs.lstatSync("C:\\Program Files\\" + '/' + file).isDirectory() && file.startsWith("OpenModelica");
+            return fs.lstatSync(path.join("C:\\Program Files\\", file)).isDirectory() && file.startsWith("OpenModelica");
         });
         const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin");
         core.debug(`Adding ${pathToOmc} to PATH`);
@@ -398,42 +398,44 @@ function showProgress(file, cur, len, total) {
  * @returns
  */
 function getPromise(url, dest) {
-    return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(dest);
-        const request = https.get(url, (response) => {
-            let header = response.headers['content-length'];
-            let len = header ? parseInt(header, 10) : 0;
-            let cur = 0;
-            let total = len / 1048576; //1048576 - bytes in 1 Megabyte
-            let wait = 1000; // wait in milliseconds
-            let lastTime = 0;
-            if (response.statusCode === 200) {
-                response.pipe(file);
-            }
-            else {
-                file.close();
-                fs.unlink(dest, () => { }); // Delete temp file
-                reject(`Server responded with ${response.statusCode}: ${response.statusMessage}`);
-            }
-            response.on('data', function (chunk) {
-                cur += chunk.length;
-                if (Date.now() - lastTime >= wait) {
-                    showProgress(dest, cur, len, total);
-                    lastTime = Date.now();
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
+            const file = fs.createWriteStream(dest);
+            https.get(url, (response) => {
+                const header = response.headers['content-length'];
+                const len = header ? parseInt(header, 10) : 0;
+                const total = len / 1048576; //1048576 - bytes in 1 Megabyte
+                const wait = 1000; // wait in milliseconds
+                let cur = 0;
+                let lastTime = 0;
+                if (response.statusCode === 200) {
+                    response.pipe(file);
                 }
-            });
-            response.on('error', err => {
-                file.close();
-                fs.unlink(dest, () => { }); // Delete temp file
-                reject(err.message);
-            });
-            file.on("finish", () => {
-                resolve();
-            });
-            file.on("error", err => {
-                file.close();
-                fs.unlink(dest, () => { }); // Delete temp file
-                reject(err.message);
+                else {
+                    file.close();
+                    fs.unlink(dest, () => { }); // Delete temp file
+                    reject(Error(`Server responded with ${response.statusCode}: ${response.statusMessage}`));
+                }
+                response.on('data', function (chunk) {
+                    cur += chunk.length;
+                    if (Date.now() - lastTime >= wait) {
+                        showProgress(dest, cur, len, total);
+                        lastTime = Date.now();
+                    }
+                });
+                response.on('error', err => {
+                    file.close();
+                    fs.unlink(dest, () => { }); // Delete temp file
+                    reject(err.message);
+                });
+                file.on("finish", () => {
+                    resolve();
+                });
+                file.on("error", err => {
+                    file.close();
+                    fs.unlink(dest, () => { }); // Delete temp file
+                    reject(err.message);
+                });
             });
         });
     });
@@ -444,6 +446,7 @@ function getPromise(url, dest) {
  */
 function downloadSync(url, dest) {
     return __awaiter(this, void 0, void 0, function* () {
+<<<<<<< HEAD
         try {
             fs.mkdirSync(path.dirname(dest), { recursive: true });
             let downloadCall = getPromise(url, dest);
@@ -452,6 +455,10 @@ function downloadSync(url, dest) {
         catch (error) {
             console.log(error);
         }
+=======
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        yield getPromise(url, dest);
+>>>>>>> b346e8f (Modifications)
     });
 }
 exports.downloadSync = downloadSync;

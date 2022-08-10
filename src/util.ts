@@ -40,7 +40,7 @@ async function getPromise(url: string, dest: string): Promise<void> {
       } else {
         file.close()
         fs.unlink(dest, () => { })   // Delete temp file
-        reject(`Server responded with ${response.statusCode}: ${response.statusMessage}`)
+        reject(Error(`Server responded with ${response.statusCode}: ${response.statusMessage}`))
       }
 
       response.on('data', function (chunk) {

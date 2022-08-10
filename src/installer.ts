@@ -190,7 +190,7 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   let installer: string
   installer = ""
   const content = fs.readdirSync("tmp")
-  for (let f of content) {
+  for (const f of content) {
     if (f.endsWith(".exe")) {
       installer = path.resolve("tmp", f)
       break
