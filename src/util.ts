@@ -24,16 +24,16 @@ import * as path from 'path'
  * @param dest 
  * @returns 
  */
-function getPromise(url: string, dest: string): Promise<void> {
+async function getPromise(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest)
-    const request = https.get(url, (response) => {
-      let header = response.headers['content-length']
-      let len = header ? parseInt(header, 10) : 0
-      let cur = 0;
-      let total = len / 1048576 //1048576 - bytes in 1 Megabyte
-      let wait = 1000 // wait in milliseconds
-      let lastTime: number = 0
+    https.get(url, (response) => {
+      const header = response.headers['content-length']
+      const len = header ? parseInt(header, 10) : 0
+      const total = len / 1048576 //1048576 - bytes in 1 Megabyte
+      const wait = 1000 // wait in milliseconds
+      let cur = 0
+      let lastTime = 0
 
       if (response.statusCode === 200) {
         response.pipe(file)
@@ -76,11 +76,6 @@ function getPromise(url: string, dest: string): Promise<void> {
  * @param dest  Destination to download to.
  */
 export async function downloadSync(url: string, dest: string): Promise<void> {
-  try {
-    fs.mkdirSync(path.dirname(dest), {recursive: true})
-    let downloadCall = getPromise(url, dest)
-    await downloadCall;
-  } catch (error) {
-    console.log(error);
-  }
+  fs.mkdirSync(path.dirname(dest), {recursive: true})
+  await getPromise(url, dest)
 }

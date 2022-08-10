@@ -54,6 +54,7 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 ❌: Not available
 
 ## Examples
+
 ```yaml
 - uses: AnHeuermann/setup-openmodelica@main
   with:

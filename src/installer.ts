@@ -53,7 +53,7 @@ export function getOMVersions(): string[] {
  * @returns Highest available version matching versionInput.
  */
 export function getOMVersion(versionInput: string): VersionType {
-  if (osPlat != 'linux' && osPlat != 'win32') {
+  if (osPlat !== 'linux' && osPlat !== 'win32') {
     throw new Error(`getOMVersion: OS ${osPlat} not supported.`)
   }
 
@@ -189,8 +189,8 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   // Find installer
   let installer: string
   installer = ""
-  let content = fs.readdirSync("tmp")
-  for (var f of content) {
+  const content = fs.readdirSync("tmp")
+  for (let f of content) {
     if (f.endsWith(".exe")) {
       installer = path.resolve("tmp", f)
       break
@@ -208,7 +208,7 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
 
   // Add OpenModelica to PATH
   const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
-    return fs.lstatSync("C:\\Program Files\\"+'/'+file).isDirectory() && file.startsWith("OpenModelica");
+    return fs.lstatSync(path.join("C:\\Program Files\\", file)).isDirectory() && file.startsWith("OpenModelica");
   })
   const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin")
   core.debug(`Adding ${pathToOmc} to PATH`)
