@@ -1,8 +1,8 @@
+# setup-openmodelica Action
+
 [![build-test](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/test.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/test.yml)
 [![Check dist/](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/check-dist.yml)
 [![CodeQL](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/codeql-analysis.yml)
-
-# setup-openmodelica Action
 
 This action sets up the [OpenModelica Compiler](https://openmodelica.org/) `omc` for use in actions.
 
@@ -12,11 +12,11 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 
 ### Inputs
 
-  - `version`: Version of OpenModelica to install.
-    - For example
-      `'nightly'`, `'stable'`, `'release'`, `'1.18'` or `'1.18.0'`.
-  - `architecture`: Choose between 64 and 32 bit architecture.
-                    Can be `'64'` or `'32'`.
+- `version`: Version of OpenModelica to install.
+  - For example
+    `'nightly'`, `'stable'`, `'release'`, `'1.18'` or `'1.18.0'`.
+- `architecture`: Choose between 64 and 32 bit architecture.
+                  Can be `'64'` or `'32'`.
 
 ## Available OpenModelica versions
 
@@ -38,7 +38,15 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 | 1.14.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.14.1       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.13.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
-| all          | Windows | x86_x64, i386             | ❌       |
+| nightly      | Windows | x86_x64                   | ☑️       |
+| stable       | Windows | x86_x64                   | ☑️       |
+| release      | Windows | x86_x64                   | ☑️       |
+| 1.19.2       | Windows | x86_x64                   | ✔️       |
+| 1.19.0       | Windows | x86_x64                   | ☑️       |
+| 1.18.1       | Windows | x86_x64                   | ☑️       |
+| 1.18.0       | Windows | x86_x64                   | ☑️       |
+| 1.17.0       | Windows | x86_x64                   | ☑️       |
+| all          | Windows | i386                      | ❌       |
 | all          | Mac     | all                       | ❌       |
 
 ✔️: Available
@@ -46,6 +54,7 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 ❌: Not available
 
 ## Examples
+
 ```yaml
 - uses: AnHeuermann/setup-openmodelica@main
   with:
@@ -64,3 +73,16 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
     version: 'stable'
 ```
 
+## Developing this action
+
+There is a dockerfile in [.ci/dockerfile](.ci/dockerfile) one can use for developing on Windows 10,
+so the installer won't mess with the host system.
+
+To build and test run
+
+```bash
+$ npm install
+$ npm run build
+$ npm run package
+$ npm test
+```

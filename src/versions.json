@@ -1,5 +1,54 @@
 {
-  "windows": [],
+  "windows": [
+    {
+      "version": "nightly",
+      "type": "nightly",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/nightly-builds/64bit/OpenModelica-latest.exe"
+    },
+    {
+      "version": "stable",
+      "type": "stable",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"
+    },
+    {
+      "version": "release",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"
+    },
+    {
+      "version": "1.19.2",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"
+    },
+    {
+      "version": "1.19.0",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.19/0/64bit/OpenModelica-v1.19.0-64bit.exe"
+    },
+    {
+      "version": "1.18.1",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.18/1/64bit/OpenModelica-v1.18.1-64bit.exe"
+    },
+    {
+      "version": "1.18.0",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.18/0/64bit/OpenModelica-v1.18.0-64bit.exe"
+    },
+    {
+      "version": "1.17.0",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.17/0/64bit/OpenModelica-v1.17.0-64bit.exe"
+    }
+  ],
   "linux": [
     {
       "version": "nightly",

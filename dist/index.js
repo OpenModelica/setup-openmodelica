@@ -42,56 +42,84 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.showVersion = exports.installOM = exports.getOMVersion = exports.getLinuxOMVersions = void 0;
+exports.showVersion = exports.installOM = exports.getOMVersion = exports.getOMVersions = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
+const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
+const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(1383));
 const versions_json_1 = __importDefault(__nccwpck_require__(7164));
+const util = __importStar(__nccwpck_require__(4024));
 // Store information about the environment
 const osPlat = os.platform(); // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 core.debug(`platform: ${osPlat}`);
 /**
  * @returns An array of all OpenModelica versions available for download / install
  */
-function getLinuxOMVersions() {
+function getOMVersions() {
     // Get versions
     const versions = [];
-    for (const ver of versions_json_1.default.linux) {
+    let osVersionLst = [];
+    switch (osPlat) {
+        case 'linux':
+            osVersionLst = versions_json_1.default.linux;
+            break;
+        case 'win32':
+            osVersionLst = versions_json_1.default.windows;
+            break;
+        default:
+        // Array stays empty
+    }
+    for (const ver of osVersionLst) {
         versions.push(ver.version);
     }
     core.debug(`Available versions: ${versions.toString()}`);
     return versions;
 }
-exports.getLinuxOMVersions = getLinuxOMVersions;
+exports.getOMVersions = getOMVersions;
+/**
+ * @param versionInput Version to find
+ * @returns Highest available version matching versionInput.
+ */
 function getOMVersion(versionInput) {
-    if (osPlat === 'linux') {
-        let maxVersion;
-        if (versionInput === 'nightly' ||
-            versionInput === 'stable' ||
-            versionInput === 'release') {
-            maxVersion = versionInput;
-        }
-        else {
-            // Use the highest available version that matches versionInput
-            const availableReleases = getLinuxOMVersions();
-            core.debug(`Available versions ${availableReleases}`);
-            maxVersion = semver.maxSatisfying(availableReleases, versionInput);
-            if (maxVersion == null) {
-                throw new Error(`Could not find a OpenModelica version that matches ${versionInput}`);
-            }
-        }
-        core.debug(`Searching for ${versionInput}, found max version: ${maxVersion}`);
-        for (const ver of versions_json_1.default.linux) {
-            if (ver.version === maxVersion) {
-                return ver;
-            }
-        }
-        throw new Error(`Could not find version ${maxVersion} in database.`);
+    if (osPlat !== 'linux' && osPlat !== 'win32') {
+        throw new Error(`getOMVersion: OS ${osPlat} not supported.`);
+    }
+    let maxVersion;
+    if (versionInput === 'nightly' ||
+        versionInput === 'stable' ||
+        versionInput === 'release') {
+        maxVersion = versionInput;
     }
     else {
-        throw new Error(`OS ${osPlat} not supported yet.`);
+        // Use the highest available version that matches versionInput
+        const availableReleases = getOMVersions();
+        core.debug(`Available versions ${availableReleases}`);
+        maxVersion = semver.maxSatisfying(availableReleases, versionInput);
+        if (maxVersion == null) {
+            throw new Error(`Could not find a OpenModelica version that matches ${versionInput}`);
+        }
     }
+    core.debug(`Searching for ${versionInput}, found max version: ${maxVersion}`);
+    // Return highest version from versions.json
+    let osVersionLst = [];
+    switch (osPlat) {
+        case 'linux':
+            osVersionLst = versions_json_1.default.linux;
+            break;
+        case 'win32':
+            osVersionLst = versions_json_1.default.windows;
+            break;
+        default:
+        // Array stays empty
+    }
+    for (const ver of osVersionLst) {
+        if (ver.version === maxVersion) {
+            return ver;
+        }
+    }
+    throw new Error(`Could not find version ${maxVersion} in database.`);
 }
 exports.getOMVersion = getOMVersion;
 /**
@@ -133,7 +161,7 @@ function aptInstallOM(version, bit, useSudo) {
             default:
                 throw new Error(`Unknown architecture ${arch}.`);
         }
-        // Rmove old previous openmodelica.list
+        // Remove old previous openmodelica.list
         yield exec.exec(`/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`);
         // Add OpenModelica PGP public key
         yield exec.exec(`/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`);
@@ -151,9 +179,51 @@ function aptInstallOM(version, bit, useSudo) {
     });
 }
 /**
+ * Install omc using the Windows installer executable.
+ *
+ * @param version       Version object to install.
+ * @param bit           String specifying 32 or 64 bit version.
+ */
+function winInstallOM(version, bit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Download OpenModelica installer to tmp/
+        core.debug(`Downloading installer from ${version.address}`);
+        yield util.downloadSync(version.address, "tmp/installer.exe");
+        core.debug(`Finished download!`);
+        if (bit !== version.arch) {
+            throw new Error(`Architecture doesn't match architecture of version.`);
+        }
+        // Find installer
+        let installer;
+        installer = "";
+        const content = fs.readdirSync("tmp");
+        for (const f of content) {
+            if (f.endsWith(".exe")) {
+                installer = path.resolve("tmp", f);
+                break;
+            }
+        }
+        if (!fs.lstatSync(installer).isFile()) {
+            throw new Error(`Couldn't find installer executable in tmp`);
+        }
+        // Run installer
+        core.debug(`Running installer ${installer}`);
+        yield exec.exec(`${installer} /S /v /qn`);
+        // Add OpenModelica to PATH
+        const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
+            return fs.lstatSync(path.join("C:\\Program Files\\", file)).isDirectory() && file.startsWith("OpenModelica");
+        });
+        const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin");
+        core.debug(`Adding ${pathToOmc} to PATH`);
+        core.addPath(pathToOmc);
+        // Clean up
+        fs.rmSync("tmp", { recursive: true });
+    });
+}
+/**
  * Install OpenModelica
  *
- * @param version             Version of OpenModelcia to be installed.
+ * @param version             Version of OpenModelica to be installed.
  * @param architectureInput   64 or 32 bit.
  */
 function installOM(version, architectureInput) {
@@ -161,6 +231,9 @@ function installOM(version, architectureInput) {
         switch (osPlat) {
             case 'linux':
                 yield aptInstallOM(version, architectureInput, true);
+                break;
+            case 'win32':
+                yield winInstallOM(version, architectureInput);
                 break;
             default:
                 throw new Error(`Platform ${osPlat} is not supported`);
@@ -259,6 +332,124 @@ function run() {
 }
 exports.run = run;
 run();
+
+
+/***/ }),
+
+/***/ 4024:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.downloadSync = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const fs = __importStar(__nccwpck_require__(7147));
+const https = __importStar(__nccwpck_require__(5687));
+const path = __importStar(__nccwpck_require__(1017));
+/**
+ * Taken from https://gist.github.com/gkhays/fa9d112a3f9ee61c6005136ebda2a6fd
+ * @param file
+ * @param cur
+ * @param len
+ * @param total
+ */
+function showProgress(file, cur, len, total) {
+    core.debug(`Downloading ${file} - ${(100.0 * cur / len).toFixed(2)}% (${(cur / 1048576).toFixed(2)} MB) of total size: ${total.toFixed(2)} MB`);
+}
+/**
+ * Taken from https://usefulangle.com/post/170/nodejs-synchronous-http-request
+ *
+ * @param url
+ * @param dest
+ * @returns
+ */
+function getPromise(url, dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
+            const file = fs.createWriteStream(dest);
+            https.get(url, (response) => {
+                const header = response.headers['content-length'];
+                const len = header ? parseInt(header, 10) : 0;
+                const total = len / 1048576; //1048576 - bytes in 1 Megabyte
+                const wait = 1000; // wait in milliseconds
+                let cur = 0;
+                let lastTime = 0;
+                if (response.statusCode === 200) {
+                    response.pipe(file);
+                }
+                else {
+                    file.close();
+                    fs.unlink(dest, () => { }); // Delete temp file
+                    reject(Error(`Server responded with ${response.statusCode}: ${response.statusMessage}`));
+                }
+                response.on('data', function (chunk) {
+                    cur += chunk.length;
+                    if (Date.now() - lastTime >= wait) {
+                        showProgress(dest, cur, len, total);
+                        lastTime = Date.now();
+                    }
+                });
+                response.on('error', err => {
+                    file.close();
+                    fs.unlink(dest, () => { }); // Delete temp file
+                    reject(err.message);
+                });
+                file.on("finish", () => {
+                    resolve();
+                });
+                file.on("error", err => {
+                    file.close();
+                    fs.unlink(dest, () => { }); // Delete temp file
+                    reject(err.message);
+                });
+            });
+        });
+    });
+}
+/**
+ * @param url   Download URL.
+ * @param dest  Destination to download to.
+ */
+function downloadSync(url, dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        yield getPromise(url, dest);
+    });
+}
+exports.downloadSync = downloadSync;
 
 
 /***/ }),
@@ -7422,7 +7613,7 @@ module.exports = require("util");
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"windows":[],"linux":[{"version":"nightly","type":"nightly","address":"https://build.openmodelica.org/apt"},{"version":"stable","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"release","type":"release","address":"https://build.openmodelica.org/apt"},{"version":"1","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"1.18.1","aptname":"1.18.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.1/"},{"version":"1.18.0","aptname":"1.18.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.0/"},{"version":"1.17.0","aptname":"1.17.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.17.0/"},{"version":"1.16.5","aptname":"1.16.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.5/"},{"version":"1.16.2","aptname":"1.16.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.2/"},{"version":"1.16.1","aptname":"1.16.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.1/"},{"version":"1.16.0","aptname":"1.16.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.0/"},{"version":"1.14.2","aptname":"1.14.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.2/"},{"version":"1.14.1","aptname":"1.14.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.1/"},{"version":"1.13.2","aptname":"1.13.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.2/"},{"version":"1.13.0","aptname":"1.13.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.0/"},{"version":"1.12.0","aptname":"1.12.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.12.0/"},{"version":"1.11.0","aptname":"1.11.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.11.0/"},{"version":"1.9.5","aptname":"1.9.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.5/"},{"version":"1.9.4","aptname":"1.9.4-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.4/"},{"version":"1.9.3","aptname":"1.9.3-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.3/"},{"version":"1.9.2","aptname":"1.9.2-beta-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.2/"},{"version":"1.9.1","aptname":"1.9.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.1/"},{"version":"1.9.0","aptname":"1.9.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.0/"},{"version":"1.8.1","aptname":"1.8.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.1/"},{"version":"1.8.0","aptname":"1.8.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.0/"},{"version":"1.7.0","aptname":"1.7.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.7.0/"},{"version":"1.6.0","aptname":"1.6.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.6.0/"},{"version":"1.5.0","aptname":"1.5.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.5.0/"}],"mac":[]}');
+module.exports = JSON.parse('{"windows":[{"version":"nightly","type":"nightly","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/nightly-builds/64bit/OpenModelica-latest.exe"},{"version":"stable","type":"stable","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"},{"version":"release","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"},{"version":"1.19.2","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"},{"version":"1.19.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/0/64bit/OpenModelica-v1.19.0-64bit.exe"},{"version":"1.18.1","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.18/1/64bit/OpenModelica-v1.18.1-64bit.exe"},{"version":"1.18.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.18/0/64bit/OpenModelica-v1.18.0-64bit.exe"},{"version":"1.17.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.17/0/64bit/OpenModelica-v1.17.0-64bit.exe"}],"linux":[{"version":"nightly","type":"nightly","address":"https://build.openmodelica.org/apt"},{"version":"stable","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"release","type":"release","address":"https://build.openmodelica.org/apt"},{"version":"1","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"1.18.1","aptname":"1.18.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.1/"},{"version":"1.18.0","aptname":"1.18.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.0/"},{"version":"1.17.0","aptname":"1.17.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.17.0/"},{"version":"1.16.5","aptname":"1.16.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.5/"},{"version":"1.16.2","aptname":"1.16.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.2/"},{"version":"1.16.1","aptname":"1.16.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.1/"},{"version":"1.16.0","aptname":"1.16.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.0/"},{"version":"1.14.2","aptname":"1.14.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.2/"},{"version":"1.14.1","aptname":"1.14.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.1/"},{"version":"1.13.2","aptname":"1.13.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.2/"},{"version":"1.13.0","aptname":"1.13.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.0/"},{"version":"1.12.0","aptname":"1.12.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.12.0/"},{"version":"1.11.0","aptname":"1.11.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.11.0/"},{"version":"1.9.5","aptname":"1.9.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.5/"},{"version":"1.9.4","aptname":"1.9.4-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.4/"},{"version":"1.9.3","aptname":"1.9.3-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.3/"},{"version":"1.9.2","aptname":"1.9.2-beta-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.2/"},{"version":"1.9.1","aptname":"1.9.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.1/"},{"version":"1.9.0","aptname":"1.9.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.0/"},{"version":"1.8.1","aptname":"1.8.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.1/"},{"version":"1.8.0","aptname":"1.8.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.0/"},{"version":"1.7.0","aptname":"1.7.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.7.0/"},{"version":"1.6.0","aptname":"1.6.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.6.0/"},{"version":"1.5.0","aptname":"1.5.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.5.0/"}],"mac":[]}');
 
 /***/ })
 

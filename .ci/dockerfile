@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/windows:2004
+
+COPY node-v16.16.0-x64.msi node.msi
+
+RUN powershell Start-Process MsiExec.exe -Wait -ArgumentList '/i node.msi /qn'
