@@ -445,19 +445,8 @@ function getPromise(url, dest) {
  */
 function downloadSync(url, dest) {
     return __awaiter(this, void 0, void 0, function* () {
-<<<<<<< HEAD
-        try {
-            fs.mkdirSync(path.dirname(dest), { recursive: true });
-            let downloadCall = getPromise(url, dest);
-            yield downloadCall;
-        }
-        catch (error) {
-            console.log(error);
-        }
-=======
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         yield getPromise(url, dest);
->>>>>>> b346e8f (Modifications)
     });
 }
 exports.downloadSync = downloadSync;
