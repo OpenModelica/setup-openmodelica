@@ -188,18 +188,18 @@ function winInstallOM(version, bit) {
     return __awaiter(this, void 0, void 0, function* () {
         // Download OpenModelica installer to tmp/
         core.debug(`Downloading installer from ${version.address}`);
-        yield util.downloadSync(version.address, "tmp/installer.exe");
+        yield util.downloadSync(version.address, 'tmp/installer.exe');
         core.debug(`Finished download!`);
         if (bit !== version.arch) {
             throw new Error(`Architecture doesn't match architecture of version.`);
         }
         // Find installer
         let installer;
-        installer = "";
-        const content = fs.readdirSync("tmp");
+        installer = '';
+        const content = fs.readdirSync('tmp');
         for (const f of content) {
-            if (f.endsWith(".exe")) {
-                installer = path.resolve("tmp", f);
+            if (f.endsWith('.exe')) {
+                installer = path.resolve('tmp', f);
                 break;
             }
         }
@@ -210,15 +210,18 @@ function winInstallOM(version, bit) {
         core.debug(`Running installer ${installer}`);
         yield exec.exec(`${installer} /S /v /qn`);
         // Add OpenModelica to PATH and set OPENMODELICAHOME
-        const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
-            return fs.lstatSync(path.join("C:\\Program Files\\", file)).isDirectory() && file.startsWith("OpenModelica");
+        const openmodelicahome = fs
+            .readdirSync('C:\\Program Files\\')
+            .filter(function (file) {
+            return (fs.lstatSync(path.join('C:\\Program Files\\', file)).isDirectory() &&
+                file.startsWith('OpenModelica'));
         });
-        const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin");
+        const pathToOmc = path.join('C:\\Program Files\\', openmodelicahome[0], 'bin');
         core.debug(`Adding ${pathToOmc} to PATH`);
         core.addPath(pathToOmc);
-        core.exportVariable('OPENMODELICAHOME', path.join("C:\\Program Files\\", openmodelicahome[0]));
+        core.exportVariable('OPENMODELICAHOME', path.join('C:\\Program Files\\', openmodelicahome[0]));
         // Clean up
-        fs.rmSync("tmp", { recursive: true });
+        fs.rmSync('tmp', { recursive: true });
     });
 }
 /**
