@@ -25,4 +25,4 @@ jobs:
       - uses: ./
         with:
           version: 'stable'
-      - run: 'echo "OPENMODELICAHOME: $OPENMODELICAHOME"'
+      - run: echo $OPENMODELICAHOME

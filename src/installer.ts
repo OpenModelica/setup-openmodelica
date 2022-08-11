@@ -37,7 +37,7 @@ export function getOMVersions(): string[] {
       osVersionLst = json.windows
       break
     default:
-      // Array stays empty
+    // Array stays empty
   }
 
   for (const ver of osVersionLst) {
@@ -76,9 +76,7 @@ export function getOMVersion(versionInput: string): VersionType {
       )
     }
   }
-  core.debug(
-    `Searching for ${versionInput}, found max version: ${maxVersion}`
-  )
+  core.debug(`Searching for ${versionInput}, found max version: ${maxVersion}`)
 
   // Return highest version from versions.json
   let osVersionLst: VersionType[] = []
@@ -90,7 +88,7 @@ export function getOMVersion(versionInput: string): VersionType {
       osVersionLst = json.windows
       break
     default:
-      // Array stays empty
+    // Array stays empty
   }
   for (const ver of osVersionLst) {
     if (ver.version === maxVersion) {
@@ -179,7 +177,7 @@ async function aptInstallOM(
 async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   // Download OpenModelica installer to tmp/
   core.debug(`Downloading installer from ${version.address}`)
-  await util.downloadSync(version.address, "tmp/installer.exe")
+  await util.downloadSync(version.address, 'tmp/installer.exe')
   core.debug(`Finished download!`)
 
   if (bit !== version.arch) {
@@ -188,35 +186,41 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
 
   // Find installer
   let installer: string
-  installer = ""
-  const content = fs.readdirSync("tmp")
+  installer = ''
+  const content = fs.readdirSync('tmp')
   for (const f of content) {
-    if (f.endsWith(".exe")) {
-      installer = path.resolve("tmp", f)
+    if (f.endsWith('.exe')) {
+      installer = path.resolve('tmp', f)
       break
     }
   }
-  if(!fs.lstatSync(installer).isFile()) {
+  if (!fs.lstatSync(installer).isFile()) {
     throw new Error(`Couldn't find installer executable in tmp`)
   }
 
   // Run installer
   core.debug(`Running installer ${installer}`)
-  await exec.exec(
-    `${installer} /S /v /qn`
-  )
+  await exec.exec(`${installer} /S /v /qn`)
 
   // Add OpenModelica to PATH and set OPENMODELICAHOME
-  const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
-    return fs.lstatSync(path.join("C:\\Program Files\\", file)).isDirectory() && file.startsWith("OpenModelica")
-  })
-  const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin")
+  const openmodelicahome = fs
+    .readdirSync('C:\\Program Files\\')
+    .filter(function (file) {
+      return (
+        fs.lstatSync(path.join('C:\\Program Files\\', file)).isDirectory() &&
+        file.startsWith('OpenModelica')
+      )
+    })
+  const pathToOmc = path.join('C:\\Program Files\\', openmodelicahome[0], 'bin')
   core.debug(`Adding ${pathToOmc} to PATH`)
   core.addPath(pathToOmc)
-  core.exportVariable('OPENMODELICAHOME', path.join("C:\\Program Files\\", openmodelicahome[0]))
+  core.exportVariable(
+    'OPENMODELICAHOME',
+    path.join('C:\\Program Files\\', openmodelicahome[0])
+  )
 
   // Clean up
-  fs.rmSync("tmp", { recursive:true })
+  fs.rmSync('tmp', {recursive: true})
 }
 
 /**
