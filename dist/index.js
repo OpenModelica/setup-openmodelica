@@ -209,13 +209,14 @@ function winInstallOM(version, bit) {
         // Run installer
         core.debug(`Running installer ${installer}`);
         yield exec.exec(`${installer} /S /v /qn`);
-        // Add OpenModelica to PATH
+        // Add OpenModelica to PATH and set OPENMODELICAHOME
         const openmodelicahome = fs.readdirSync("C:\\Program Files\\").filter(function (file) {
             return fs.lstatSync(path.join("C:\\Program Files\\", file)).isDirectory() && file.startsWith("OpenModelica");
         });
         const pathToOmc = path.join("C:\\Program Files\\", openmodelicahome[0], "bin");
         core.debug(`Adding ${pathToOmc} to PATH`);
         core.addPath(pathToOmc);
+        core.exportVariable('OPENMODELICAHOME', path.join("C:\\Program Files\\", openmodelicahome[0]));
         // Clean up
         fs.rmSync("tmp", { recursive: true });
     });

@@ -4,9 +4,9 @@
 [![Check dist/](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/check-dist.yml)
 [![CodeQL](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/codeql-analysis.yml)
 
-This action sets up the [OpenModelica Compiler](https://openmodelica.org/) `omc` for use in actions.
-
-At the moment only Linux OS using advanced package manager apt are supported. There apt is used to install `omc`.
+This action sets up the [OpenModelica Compiler](https://openmodelica.org/) `omc` for use in
+actions on Linux and Windows runners.
+On Linux apt is used to install OpenModelica, on Windows the installer executable is used.
 
 ## Usage
 
@@ -38,15 +38,15 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
 | 1.14.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.14.1       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.13.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
-| nightly      | Windows | x86_x64                   | ☑️       |
-| stable       | Windows | x86_x64                   | ☑️       |
-| release      | Windows | x86_x64                   | ☑️       |
-| 1.19.2       | Windows | x86_x64                   | ✔️       |
-| 1.19.0       | Windows | x86_x64                   | ☑️       |
-| 1.18.1       | Windows | x86_x64                   | ☑️       |
-| 1.18.0       | Windows | x86_x64                   | ☑️       |
-| 1.17.0       | Windows | x86_x64                   | ☑️       |
-| all          | Windows | i386                      | ❌       |
+| nightly      | Windows | 64bit                     | ☑️       |
+| stable       | Windows | 64bit                     | ✔️       |
+| release      | Windows | 64bit                     | ☑️       |
+| 1.19.2       | Windows | 64bit                     | ✔️       |
+| 1.19.0       | Windows | 64bit                     | ☑️       |
+| 1.18.1       | Windows | 64bit                     | ☑️       |
+| 1.18.0       | Windows | 64bit                     | ☑️       |
+| 1.17.0       | Windows | 64bit                     | ☑️       |
+| all          | Windows | 32bit                     | ❌       |
 | all          | Mac     | all                       | ❌       |
 
 ✔️: Available
@@ -73,12 +73,20 @@ At the moment only Linux OS using advanced package manager apt are supported. Th
     version: 'stable'
 ```
 
+## Known Limitations
+
+- This action is very slow, especially on Windows, see [issue #36](https://github.com/AnHeuermann/setup-openmodelica/issues/36).
+- Macos runners are not supported, because OpenModelica discontinued the Mac builds after version 1.16.
+  It should be possible to build/install latest OpenModelica nightly for macOS,
+  see [this README](https://github.com/OpenModelica/OpenModelica/blob/master/README.cmake.md#33-macos).
+- OPENMODELICA home environment variable is only set on Windows. If you need it on Linux as well open an issue.
+
 ## Developing this action
 
 There is a dockerfile in [.ci/dockerfile](.ci/dockerfile) one can use for developing on Windows 10,
 so the installer won't mess with the host system.
 
-To build and test run
+To build and test run:
 
 ```bash
 $ npm install
