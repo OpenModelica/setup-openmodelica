@@ -177,13 +177,11 @@ async function aptInstallOM(
  */
 async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   // Download OpenModelica installer to tmp/
-  core.info(`Downloading installer from ${version.address}`)
   const installer = await util.downloadCachedSync(
     version.address,
     'tmp',
     version.version === 'nightly'
   )
-  core.info(`Finished download!`)
 
   if (bit !== version.arch) {
     throw new Error(`Architecture doesn't match architecture of version.`)

@@ -188,9 +188,7 @@ function aptInstallOM(version, bit, useSudo) {
 function winInstallOM(version, bit) {
     return __awaiter(this, void 0, void 0, function* () {
         // Download OpenModelica installer to tmp/
-        core.info(`Downloading installer from ${version.address}`);
         const installer = yield util.downloadCachedSync(version.address, 'tmp', version.version === 'nightly');
-        core.info(`Finished download!`);
         if (bit !== version.arch) {
             throw new Error(`Architecture doesn't match architecture of version.`);
         }
