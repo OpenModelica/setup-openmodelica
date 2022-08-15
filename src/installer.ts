@@ -158,6 +158,7 @@ async function aptInstallOM(
   )
 
   // Install OpenModelica
+  core.info(`Running apt-get install`)
   await exec.exec(`${sudo} apt-get update`)
   if (version.type === 'nightly' || !version.aptname) {
     await exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`)

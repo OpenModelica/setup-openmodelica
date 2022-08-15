@@ -109,7 +109,7 @@ export async function downloadCachedSync(
   // Get name of installer from url
   const installer = url.split('/').pop()
   if (installer === undefined) {
-    throw new Error(`Couldn't find installer executable in tmp`)
+    throw new Error(`Couldn't find installer name in url`)
   }
   const installPath = path.join(dest, installer)
 

@@ -169,6 +169,7 @@ function aptInstallOM(version, bit, useSudo) {
     ${version.address} ${'`'}lsb_release -cs${'`'} ${version.type} \
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         // Install OpenModelica
+        core.info(`Running apt-get install`);
         yield exec.exec(`${sudo} apt-get update`);
         if (version.type === 'nightly' || !version.aptname) {
             yield exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`);
@@ -457,7 +458,7 @@ function downloadCachedSync(url, dest, ignoreCached) {
         // Get name of installer from url
         const installer = url.split('/').pop();
         if (installer === undefined) {
-            throw new Error(`Couldn't find installer executable in tmp`);
+            throw new Error(`Couldn't find installer name in url`);
         }
         const installPath = path.join(dest, installer);
         // Don't cache nightly builds or installers ending with -latest.exe
