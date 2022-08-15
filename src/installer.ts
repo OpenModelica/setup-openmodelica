@@ -176,30 +176,20 @@ async function aptInstallOM(
  */
 async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   // Download OpenModelica installer to tmp/
-  core.debug(`Downloading installer from ${version.address}`)
-  await util.downloadSync(version.address, 'tmp/installer.exe')
-  core.debug(`Finished download!`)
+  core.info(`Downloading installer from ${version.address}`)
+  const installer = await util.downloadCachedSync(
+    version.address,
+    'tmp',
+    version.version === 'nightly'
+  )
+  core.info(`Finished download!`)
 
   if (bit !== version.arch) {
     throw new Error(`Architecture doesn't match architecture of version.`)
   }
 
-  // Find installer
-  let installer: string
-  installer = ''
-  const content = fs.readdirSync('tmp')
-  for (const f of content) {
-    if (f.endsWith('.exe')) {
-      installer = path.resolve('tmp', f)
-      break
-    }
-  }
-  if (!fs.lstatSync(installer).isFile()) {
-    throw new Error(`Couldn't find installer executable in tmp`)
-  }
-
   // Run installer
-  core.debug(`Running installer ${installer}`)
+  core.info(`Running installer ${installer}`)
   await exec.exec(`${installer} /S /v /qn`)
 
   // Add OpenModelica to PATH and set OPENMODELICAHOME
@@ -212,7 +202,7 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
       )
     })
   const pathToOmc = path.join('C:\\Program Files\\', openmodelicahome[0], 'bin')
-  core.debug(`Adding ${pathToOmc} to PATH`)
+  core.info(`Adding ${pathToOmc} to PATH`)
   core.addPath(pathToOmc)
   core.exportVariable(
     'OPENMODELICAHOME',

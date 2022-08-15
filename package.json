@@ -25,6 +25,7 @@
   "author": "Andreas Heuermann",
   "license": "MIT",
   "dependencies": {
+    "@actions/cache": "^3.0.3",
     "@actions/core": "^1.9.1",
     "@actions/exec": "^1.1.1",
     "@actions/tool-cache": "^2.0.1"
@@ -43,5 +44,12 @@
     "semver": "^7.3.7",
     "ts-jest": "^28.0.7",
     "typescript": "^4.7.4"
+  },
+  "bugs": {
+    "url": "https://github.com/AnHeuermann/setup-openmodelica/issues"
+  },
+  "homepage": "https://github.com/AnHeuermann/setup-openmodelica#readme",
+  "directories": {
+    "lib": "lib"
   }
 }
