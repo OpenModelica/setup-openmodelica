@@ -469,13 +469,13 @@ function downloadCachedSync(url, dest, ignoreCached) {
             const cacheKey = yield cache.restoreCache([installPath], url);
             if (cacheKey === undefined) {
                 yield downloadSync(url, installPath);
+                const cachedId = yield cache.saveCache([installPath], url);
+                if (cachedId !== -1) {
+                    core.debug(`Installer ${installer} saved with key: ${installPath}`);
+                }
             }
             else {
                 core.info(`Using cached installer for ${url}`);
-            }
-            const cachedId = yield cache.saveCache([installPath], url);
-            if (cachedId !== -1) {
-                core.debug(`Installer ${installer} saved with key: ${installPath}`);
             }
         }
         if (!fs.lstatSync(installPath).isFile()) {

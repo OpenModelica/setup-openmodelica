@@ -122,12 +122,12 @@ export async function downloadCachedSync(
     const cacheKey = await cache.restoreCache([installPath], url)
     if (cacheKey === undefined) {
       await downloadSync(url, installPath)
+      const cachedId = await cache.saveCache([installPath], url)
+      if (cachedId !== -1) {
+        core.debug(`Installer ${installer} saved with key: ${installPath}`)
+      }
     } else {
       core.info(`Using cached installer for ${url}`)
-    }
-    const cachedId = await cache.saveCache([installPath], url)
-    if (cachedId !== -1) {
-      core.debug(`Installer ${installer} saved with key: ${installPath}`)
     }
   }
 
