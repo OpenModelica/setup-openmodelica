@@ -439,8 +439,10 @@ function getDownloadPromise(url, dest) {
  */
 function downloadSync(url, dest) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.info(`Downloading installer from ${url}`);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         yield getDownloadPromise(url, dest);
+        core.info(`Finished download!`);
     });
 }
 exports.downloadSync = downloadSync;
@@ -469,6 +471,9 @@ function downloadCachedSync(url, dest, ignoreCached) {
             const cacheKey = yield cache.restoreCache([installPath], url);
             if (cacheKey === undefined) {
                 yield downloadSync(url, installPath);
+            }
+            else {
+                core.info(`Using cached installer for ${url}`);
             }
             const cachedId = yield cache.saveCache([installPath], url);
             if (cachedId !== -1) {

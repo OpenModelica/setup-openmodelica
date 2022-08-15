@@ -88,8 +88,10 @@ async function getDownloadPromise(url: string, dest: string): Promise<void> {
  * @param dest  Destination directory to download to.
  */
 export async function downloadSync(url: string, dest: string): Promise<void> {
+  core.info(`Downloading installer from ${url}`)
   fs.mkdirSync(path.dirname(dest), {recursive: true})
   await getDownloadPromise(url, dest)
+  core.info(`Finished download!`)
 }
 
 /**
@@ -120,6 +122,8 @@ export async function downloadCachedSync(
     const cacheKey = await cache.restoreCache([installPath], url)
     if (cacheKey === undefined) {
       await downloadSync(url, installPath)
+    } else {
+      core.info(`Using cached installer for ${url}`)
     }
     const cachedId = await cache.saveCache([installPath], url)
     if (cachedId !== -1) {
