@@ -25,7 +25,7 @@
   "author": "Andreas Heuermann",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^3.0.4",
+    "@actions/cache": "^3.1.0",
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/tool-cache": "^2.0.1"
