@@ -84,13 +84,13 @@ function linuxTests(): void {
   )
 
   test(
-    'Install 64 bit OpenModelica nigthly',
+    'Install 64 bit OpenModelica nightly',
     async () => {
       await purgeOMC()
       const version = installer.getOMVersion('nightly')
       await installer.installOM(version, '64')
       const resVer = await installer.showVersion()
-      expect(resVer).toContain('1.20.0~dev-')
+      expect(resVer).toContain('1.21.0~dev-')
     },
     10 * 60000
   )
