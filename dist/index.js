@@ -139,7 +139,7 @@ function aptInstallOM(version, bit, useSudo) {
             sudo = '';
         }
         // Get architecture
-        const out = yield exec.getExecOutput(`/bin/bash -c "dpkg --print-architecture"`);
+        var out = yield exec.getExecOutput(`/bin/bash -c "dpkg --print-architecture"`);
         let arch = out.stdout.trim();
         switch (arch) {
             case 'amd64':
@@ -161,12 +161,21 @@ function aptInstallOM(version, bit, useSudo) {
             default:
                 throw new Error(`Unknown architecture ${arch}.`);
         }
+        // Check if distribution is available
+        out = yield exec.getExecOutput(`/bin/bash -c "lsb_release -cs"`);
+        let distro = out.stdout.trim();
+        if ((version.version != 'nightly') && (version.version != 'stable') && (version.version != 'release')) {
+            const response = yield fetch(`${version.address}/${distro}`);
+            if (response.status == 404) {
+                throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`);
+            }
+        }
         // Remove old previous openmodelica.list
         yield exec.exec(`/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`);
         // Add OpenModelica PGP public key
         yield exec.exec(`/bin/bash -c "curl -fsSL http://build.openmodelica.org/apt/openmodelica.asc ${'|'} ${sudo} gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg"`);
         yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] \
-    ${version.address} ${'`'}lsb_release -cs${'`'} ${version.type} \
+    ${version.address} ${distro} ${version.type} \
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         // Install OpenModelica
         core.info(`Running apt-get install`);
