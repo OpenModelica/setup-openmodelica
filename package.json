@@ -1,6 +1,9 @@
 {
   "name": "setup-openmodelica",
   "version": "0.3.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "private": true,
   "description": "Setup OpenModelica Compiler omc",
   "main": "lib/setup-openmodelica.js",
@@ -28,8 +31,7 @@
     "@actions/cache": "^3.0.4",
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
-    "@actions/tool-cache": "^2.0.1",
-    "node-fetch": "^3.3.0"
+    "@actions/tool-cache": "^2.0.1"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
