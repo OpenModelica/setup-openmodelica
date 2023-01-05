@@ -102,7 +102,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(version, '64')
       const resVer = await installer.showVersion()
-      expect(resVer).toContain('1.19.')
+      expect(resVer).toContain('1.20.')
     },
     10 * 60000
   )
