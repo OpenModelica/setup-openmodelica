@@ -118,7 +118,7 @@ async function aptInstallOM(
   }
 
   // Get architecture
-  var out = await exec.getExecOutput(
+  let out = await exec.getExecOutput(
     `/bin/bash -c "dpkg --print-architecture"`
   )
   let arch = out.stdout.trim()
@@ -145,10 +145,10 @@ async function aptInstallOM(
   out = await exec.getExecOutput(
     `/bin/bash -c "lsb_release -cs"`
   )
-  let distro = out.stdout.trim()
-  if ((version.version != 'nightly') && (version.version != 'stable') && (version.version != 'release')) {
+  const distro = out.stdout.trim()
+  if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
     const response = await fetch(`${version.address}/${distro}`)
-    if (response.status == 404) {
+    if (response.status === 404) {
       throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`)
     }
   }

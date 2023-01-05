@@ -139,7 +139,7 @@ function aptInstallOM(version, bit, useSudo) {
             sudo = '';
         }
         // Get architecture
-        var out = yield exec.getExecOutput(`/bin/bash -c "dpkg --print-architecture"`);
+        let out = yield exec.getExecOutput(`/bin/bash -c "dpkg --print-architecture"`);
         let arch = out.stdout.trim();
         switch (arch) {
             case 'amd64':
@@ -163,10 +163,10 @@ function aptInstallOM(version, bit, useSudo) {
         }
         // Check if distribution is available
         out = yield exec.getExecOutput(`/bin/bash -c "lsb_release -cs"`);
-        let distro = out.stdout.trim();
-        if ((version.version != 'nightly') && (version.version != 'stable') && (version.version != 'release')) {
+        const distro = out.stdout.trim();
+        if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
             const response = yield fetch(`${version.address}/${distro}`);
-            if (response.status == 404) {
+            if (response.status === 404) {
                 throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`);
             }
         }
