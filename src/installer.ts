@@ -118,7 +118,7 @@ async function aptInstallOM(
   }
 
   // Get architecture
-  const out = await exec.getExecOutput(
+  let out = await exec.getExecOutput(
     `/bin/bash -c "dpkg --print-architecture"`
   )
   let arch = out.stdout.trim()
@@ -141,6 +141,18 @@ async function aptInstallOM(
       throw new Error(`Unknown architecture ${arch}.`)
   }
 
+  // Check if distribution is available
+  out = await exec.getExecOutput(
+    `/bin/bash -c "lsb_release -cs"`
+  )
+  const distro = out.stdout.trim()
+  if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
+    const response = await fetch(`${version.address}/${distro}`)
+    if (response.status === 404) {
+      throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`)
+    }
+  }
+
   // Remove old previous openmodelica.list
   await exec.exec(
     `/bin/bash -c "${sudo} rm -f /etc/apt/sources.list.d/openmodelica.list /usr/share/keyrings/openmodelica-keyring.gpg"`
@@ -153,7 +165,7 @@ async function aptInstallOM(
 
   await exec.exec(
     `/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] \
-    ${version.address} ${'`'}lsb_release -cs${'`'} ${version.type} \
+    ${version.address} ${distro} ${version.type} \
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
   )
 
