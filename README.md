@@ -94,3 +94,9 @@ $ npm run build
 $ npm run package
 $ npm test
 ```
+
+## Acknowledgments
+
+This package was developed as part of the [Proper Hybrid Models for Smarter Vehicles (PHyMoS)](https://phymos.de/en/) project,
+supported by the German [Federal Ministry for Economic Affairs and Climate Action](https://www.bmwk.de/Navigation/EN/Home/home.html)
+with project number 19|200022G.
