@@ -123,13 +123,14 @@ function getOMVersion(versionInput) {
 }
 exports.getOMVersion = getOMVersion;
 /**
- * Install omc with apt.
+ * Install OpenModelica packages with apt.
  *
+ * @param packages      APT packages to install.
  * @param version       Version object to install.
  * @param bit           String specifying 32 or 64 bit version.
  * @param useSudo       true if root rights are required.
  */
-function aptInstallOM(version, bit, useSudo) {
+function aptInstallOM(packages, version, bit, useSudo) {
     return __awaiter(this, void 0, void 0, function* () {
         let sudo;
         if (useSudo) {
@@ -177,14 +178,18 @@ function aptInstallOM(version, bit, useSudo) {
         yield exec.exec(`/bin/bash -c "echo deb [arch=${arch} signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] \
     ${version.address} ${distro} ${version.type} \
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
-        // Install OpenModelica
+        // Install OpenModelica packages
         core.info(`Running apt-get install`);
         yield exec.exec(`${sudo} apt-get update`);
-        if (version.type === 'nightly' || !version.aptname) {
-            yield exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`);
-        }
-        else {
-            yield exec.exec(`/bin/bash -c "${sudo} apt-get install omc=${version.aptname} -V -qy"`);
+        for (const pkg of packages) {
+            if (version.type === 'nightly' || !version.aptname) {
+                core.debug(`Running: /bin/bash -c "${sudo} apt-get install ${pkg} -qy"`);
+                yield exec.exec(`/bin/bash -c "${sudo} apt-get install ${pkg} -qy"`);
+            }
+            else {
+                core.debug(`/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy`);
+                yield exec.exec(`/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy"`);
+            }
         }
     });
 }
@@ -220,16 +225,17 @@ function winInstallOM(version, bit) {
     });
 }
 /**
- * Install OpenModelica
+ * Install OpenModelica packages (omc, OMSimulator)
  *
+ * @param packages            (APT) packages to install.
  * @param version             Version of OpenModelica to be installed.
  * @param architectureInput   64 or 32 bit.
  */
-function installOM(version, architectureInput) {
+function installOM(packages, version, architectureInput) {
     return __awaiter(this, void 0, void 0, function* () {
         switch (osPlat) {
             case 'linux':
-                yield aptInstallOM(version, architectureInput, true);
+                yield aptInstallOM(packages, version, architectureInput, true);
                 break;
             case 'win32':
                 yield winInstallOM(version, architectureInput);
@@ -241,14 +247,14 @@ function installOM(version, architectureInput) {
 }
 exports.installOM = installOM;
 /**
- * Test if omc has been installed and print the version.
+ * Test if progrmm has been installed and print the version.
  */
-function showVersion() {
+function showVersion(program) {
     return __awaiter(this, void 0, void 0, function* () {
-        const out = yield exec.getExecOutput('omc', ['--version']);
+        const out = yield exec.getExecOutput(program, ['--version']);
         if (out.exitCode !== 0) {
             core.debug(`Error message: ${out.stderr}`);
-            throw new Error(`OpenModelica could not be installed properly. Exit code: ${out.exitCode}`);
+            throw new Error(`${program} could not be installed properly. Exit code: ${out.exitCode}`);
         }
         const version = out.stdout.trim().split(' ')[1];
         return version;
@@ -314,13 +320,28 @@ function run() {
             if (!availableArchitectures.includes(architectureInput)) {
                 throw new Error(`Not a valid release type ${architectureInput}`);
             }
+            let packagesInput = core.getMultilineInput('packages');
+            if (!packagesInput) {
+                packagesInput = ['omc'];
+            }
             const version = installer.getOMVersion(versionInput);
             core.debug(`Installing OpenModelica ${version.version}`);
             // Install OpenModelica
-            yield installer.installOM(version, architectureInput);
+            yield installer.installOM(packagesInput, version, architectureInput);
             // TODO: Cache OpenModelica
-            // Test if OpenModelica is installed
-            yield installer.showVersion();
+            // Test if OpenModelica programms are installed
+            for (const pkg of packagesInput) {
+                switch (pkg) {
+                    case 'omc':
+                        yield installer.showVersion('omc');
+                        break;
+                    case 'omsimulator':
+                        yield installer.showVersion('OMSimulator');
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
         catch (error) {
             core.debug('Caught error');

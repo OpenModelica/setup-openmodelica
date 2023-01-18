@@ -63,8 +63,8 @@ function linuxTests(): void {
   //  async () => {
   //    await purgeOMC()
   //    const version = installer.getOMVersion('1.19')
-  //    await installer.installOM(version, '64')
-  //    const resVer = await installer.showVersion()
+  //    await installer.installOM(['omc'], version, '64')
+  //    const resVer = await installer.showVersion('omc')
   //    expect(resVer).toEqual('1.19.2')
   //  },
   //  10 * 60000
@@ -76,7 +76,7 @@ function linuxTests(): void {
       await purgeOMC()
       const version = installer.getOMVersion('1.18.0')
       expect(version.version).toEqual('1.18.0')
-      await expect(installer.installOM(version, '64')).rejects.toThrow('Distribution jammy not available for OpenModelica version 1.18.0.')
+      await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow('Distribution jammy not available for OpenModelica version 1.18.0.')
     },
     10 * 60000
   )
@@ -86,8 +86,8 @@ function linuxTests(): void {
     async () => {
       await purgeOMC()
       const version = installer.getOMVersion('nightly')
-      await installer.installOM(version, '64')
-      const resVer = await installer.showVersion()
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.21.0~dev-')
     },
     10 * 60000
@@ -98,8 +98,8 @@ function linuxTests(): void {
     async () => {
       await purgeOMC()
       const version = installer.getOMVersion('stable')
-      await installer.installOM(version, '64')
-      const resVer = await installer.showVersion()
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.20.')
     },
     10 * 60000
@@ -110,9 +110,22 @@ function linuxTests(): void {
     async () => {
       await purgeOMC()
       const version = installer.getOMVersion('release')
-      await installer.installOM(version, '64')
-      const resVer = await installer.showVersion()
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.19.')
+    },
+    10 * 60000
+  )
+
+  test(
+    'Install OMSimulator',
+    async () => {
+      await purgeOMC()
+      const version = installer.getOMVersion('release')
+      const packages = ['omc', 'omsimulator']
+      await installer.installOM(packages, version, '64')
+      const resVer = await installer.showVersion('OMSimulator')
+      expect(resVer).toContain('OMSimulator ')
     },
     10 * 60000
   )
@@ -124,8 +137,8 @@ function windowsTests(): void {
     async () => {
       const version = installer.getOMVersion('1.19.2')
       expect(version.version).toEqual('1.19.2')
-      await installer.installOM(version, '64')
-      const resVer = await installer.showVersion()
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.19.2')
     },
     10 * 60000

@@ -17,16 +17,32 @@ export async function run(): Promise<void> {
       throw new Error(`Not a valid release type ${architectureInput}`)
     }
 
+    let packagesInput: string[] = core.getMultilineInput('packages')
+    if (!packagesInput) {
+      packagesInput = ['omc']
+    }
+
     const version = installer.getOMVersion(versionInput)
     core.debug(`Installing OpenModelica ${version.version}`)
 
     // Install OpenModelica
-    await installer.installOM(version, architectureInput)
+    await installer.installOM(packagesInput, version, architectureInput)
 
     // TODO: Cache OpenModelica
 
-    // Test if OpenModelica is installed
-    await installer.showVersion()
+    // Test if OpenModelica programms are installed
+    for(const pkg of packagesInput) {
+      switch (pkg) {
+        case 'omc':
+          await installer.showVersion('omc')
+          break;
+        case 'omsimulator':
+          await installer.showVersion('OMSimulator')
+          break;
+        default:
+          break;
+      }
+    }
   } catch (error) {
     core.debug('Caught error')
     if (error instanceof Error) core.setFailed(error.message)
