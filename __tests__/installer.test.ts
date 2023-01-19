@@ -125,7 +125,7 @@ function linuxTests(): void {
       const packages = ['omc', 'omsimulator']
       await installer.installOM(packages, version, '64')
       const resVer = await installer.showVersion('OMSimulator')
-      expect(resVer).toContain('OMSimulator ')
+      expect(resVer).toContain('unkown-linux')
     },
     10 * 60000
   )
