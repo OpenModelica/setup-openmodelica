@@ -29,5 +29,5 @@ jobs:
       - uses: ./
         with:
           version: 'stable'
-          packages: ['omc', 'omsimulator']
+          packages: [omc, omsimulator]
       - run: echo $OPENMODELICAHOME
