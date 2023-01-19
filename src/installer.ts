@@ -99,13 +99,15 @@ export function getOMVersion(versionInput: string): VersionType {
 }
 
 /**
- * Install omc with apt.
+ * Install OpenModelica packages with apt.
  *
+ * @param packages      APT packages to install.
  * @param version       Version object to install.
  * @param bit           String specifying 32 or 64 bit version.
  * @param useSudo       true if root rights are required.
  */
 async function aptInstallOM(
+  packages: string[],
   version: VersionType,
   bit: string,
   useSudo: boolean
@@ -169,15 +171,19 @@ async function aptInstallOM(
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`
   )
 
-  // Install OpenModelica
+  // Install OpenModelica packages
   core.info(`Running apt-get install`)
   await exec.exec(`${sudo} apt-get update`)
-  if (version.type === 'nightly' || !version.aptname) {
-    await exec.exec(`/bin/bash -c "${sudo} apt-get install omc -qy"`)
-  } else {
-    await exec.exec(
-      `/bin/bash -c "${sudo} apt-get install omc=${version.aptname} -V -qy"`
-    )
+  for (const pkg of packages) {
+    if (version.type === 'nightly' || !version.aptname) {
+      core.debug(`Running: /bin/bash -c "${sudo} apt-get install ${pkg} -qy"`)
+      await exec.exec(`/bin/bash -c "${sudo} apt-get install ${pkg} -qy"`)
+    } else {
+      core.debug(`/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy`)
+      await exec.exec(
+        `/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy"`
+      )
+    }
   }
 }
 
@@ -225,18 +231,20 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
 }
 
 /**
- * Install OpenModelica
+ * Install OpenModelica packages (omc, OMSimulator)
  *
+ * @param packages            (APT) packages to install.
  * @param version             Version of OpenModelica to be installed.
  * @param architectureInput   64 or 32 bit.
  */
 export async function installOM(
+  packages: string[],
   version: VersionType,
   architectureInput: string
 ): Promise<void> {
   switch (osPlat) {
     case 'linux':
-      await aptInstallOM(version, architectureInput, true)
+      await aptInstallOM(packages, version, architectureInput, true)
       break
     case 'win32':
       await winInstallOM(version, architectureInput)
@@ -247,15 +255,17 @@ export async function installOM(
 }
 
 /**
- * Test if omc has been installed and print the version.
+ * Test if progrmm has been installed and print the version.
  */
-export async function showVersion(): Promise<string> {
-  const out = await exec.getExecOutput('omc', ['--version'])
+export async function showVersion(
+  program: string
+): Promise<string> {
+  const out = await exec.getExecOutput(program, ['--version'])
 
   if (out.exitCode !== 0) {
     core.debug(`Error message: ${out.stderr}`)
     throw new Error(
-      `OpenModelica could not be installed properly. Exit code: ${out.exitCode}`
+      `${program} could not be installed properly. Exit code: ${out.exitCode}`
     )
   }
 
