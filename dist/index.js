@@ -321,6 +321,7 @@ function run() {
                 throw new Error(`Not a valid release type ${architectureInput}`);
             }
             let packagesInput = core.getMultilineInput('packages');
+            core.debug(`packagesInput ${packagesInput}`);
             if (!packagesInput) {
                 packagesInput = ['omc'];
             }
