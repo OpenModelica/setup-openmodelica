@@ -61,9 +61,9 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 - uses: AnHeuermann/setup-openmodelica@v0.4
   with:
     version: '1.18'
-      packages: |
-        omc
-        omsimulator
+    packages: |
+      'omc'
+      'omsimulator'
 ```
 
 ```yaml

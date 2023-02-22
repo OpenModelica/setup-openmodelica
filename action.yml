@@ -13,6 +13,11 @@ inputs:
                   Can be "64" or "32".'
     required: false
     default: '64'
+  packages:
+    description: 'Optional list of OpenModelica APT packages to install.
+                  Each package has to be in a new line. Ignored on Windows.'
+    required: false
+    default: 'omc'
 runs:
   using: 'node16'
   main: 'dist/index.js'
