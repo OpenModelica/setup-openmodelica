@@ -19,7 +19,7 @@ inputs:
     required: false
     default: 'omc'
 runs:
-  using: 'node18'
+  using: 'node16'
   main: 'dist/index.js'
 branding:
   icon: 'download'
