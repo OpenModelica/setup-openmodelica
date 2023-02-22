@@ -15,7 +15,7 @@ inputs:
     default: '64'
   packages:
     description: 'Optional list of OpenModelica APT packages to install.
-                  Each pacakge has to be in a new line. Ignored on Windows.'
+                  Each package has to be in a new line. Ignored on Windows.'
     required: false
     default: 'omc'
 runs:
