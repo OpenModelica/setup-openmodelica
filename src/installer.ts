@@ -149,7 +149,7 @@ async function aptInstallOM(
   )
   const distro = out.stdout.trim()
   if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
-    const response = await fetch(`${version.address}/${distro}`)
+    const response = await fetch(`${version.address}dists/${distro}`)
     if (response.status === 404) {
       throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`)
     }

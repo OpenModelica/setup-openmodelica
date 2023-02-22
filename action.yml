@@ -9,7 +9,7 @@ inputs:
     required: false
     default: 'release'
   architecture: 
-    description: 'The architecture of Openmodelica to be used.
+    description: 'The architecture of OpenModelica to be used.
                   Can be "64" or "32".'
     required: false
     default: '64'
