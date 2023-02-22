@@ -19,6 +19,7 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
                   Can be `'64'` or `'32'`.
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
   - For example `'omc'` for the OpenModelica Compiler or `'omsimulator'` for OMSimulator.
+    Use one package per line.
 
 ## Available OpenModelica versions
 
@@ -27,8 +28,10 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | stable       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
-| 1.19.2       | Linux   | amd64, arm64, armhf, i386 | ❌       |
+| 1.20.0       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.19.2       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.19.1       | Linux   | amd64, arm64, armhf, i386 | ❌       |
+| 1.19.0       | Linux   | amd64, arm64, armhf, i386 | ❌       |
 | 1.18.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.18.0       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.17.0       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
@@ -40,9 +43,10 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 | 1.14.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.14.1       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.13.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
-| nightly      | Windows | 64bit                     | ☑️       |
+| nightly      | Windows | 64bit                     | ✔️       |
 | stable       | Windows | 64bit                     | ✔️       |
-| release      | Windows | 64bit                     | ☑️       |
+| release      | Windows | 64bit                     | ✔️       |
+| 1.20.0       | Windows | 64bit                     | ✔️       |
 | 1.19.2       | Windows | 64bit                     | ✔️       |
 | 1.19.0       | Windows | 64bit                     | ☑️       |
 | 1.18.1       | Windows | 64bit                     | ☑️       |
@@ -60,7 +64,7 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 ```yaml
 - uses: AnHeuermann/setup-openmodelica@v0.4
   with:
-    version: '1.18'
+    version: '1.20'
     packages: |
       'omc'
       'omsimulator'

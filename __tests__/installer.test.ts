@@ -37,7 +37,7 @@ function linuxTests(): void {
     let outVer: installer.VersionType
 
     outVer = installer.getOMVersion('1')
-    expect(outVer.version).toEqual('1.18.1')
+    expect(outVer.version).toEqual('1.20.0')
 
     outVer = installer.getOMVersion('1.18')
     expect(outVer.version).toEqual('1.18.1')
@@ -58,17 +58,17 @@ function linuxTests(): void {
     expect(outVer.type).toEqual('release')
   })
 
-  //test(
-  //  'Install 64 bit OpenModelica release 1.19',
-  //  async () => {
-  //    await purgeOMC()
-  //    const version = installer.getOMVersion('1.19')
-  //    await installer.installOM(['omc'], version, '64')
-  //    const resVer = await installer.showVersion('omc')
-  //    expect(resVer).toEqual('1.19.2')
-  //  },
-  //  10 * 60000
-  //)
+  test(
+    'Install 64 bit OpenModelica release 1.19',
+    async () => {
+      await purgeOMC()
+      const version = installer.getOMVersion('1.19')
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
+      expect(resVer).toEqual('1.19.2')
+    },
+    10 * 60000
+  )
 
   test(
     'Try to install 64 bit OpenModelica release 1.18.0 which is not availabe on jammy',
