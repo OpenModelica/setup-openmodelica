@@ -18,6 +18,7 @@ export async function run(): Promise<void> {
     }
 
     let packagesInput: string[] = core.getMultilineInput('packages')
+    core.debug(`packagesInput ${packagesInput}`)
     if (!packagesInput) {
       packagesInput = ['omc']
     }

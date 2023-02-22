@@ -30,6 +30,6 @@ jobs:
         with:
           version: 'stable'
           packages: |
-            omc
-            omsimulator
+            'omc'
+            'omsimulator'
       - run: echo $OPENMODELICAHOME
