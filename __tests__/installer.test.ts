@@ -71,7 +71,7 @@ function linuxTests(): void {
   )
 
   test(
-    'Try to install 64 bit OpenModelica release 1.18.0 which is not availabe on jammy',
+    'Try to install 64 bit OpenModelica release 1.18.0 which is not available on jammy',
     async () => {
       await purgeOMC()
       const version = installer.getOMVersion('1.18.0')
@@ -88,7 +88,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.21.0~dev-')
+      expect(resVer).toContain('1.22.0~dev-')
     },
     10 * 60000
   )
@@ -100,7 +100,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.20.')
+      expect(resVer).toContain('1.21.')
     },
     10 * 60000
   )
