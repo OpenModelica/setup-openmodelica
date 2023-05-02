@@ -112,7 +112,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('release')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.20.')
+      expect(resVer).toContain('1.21.')
     },
     10 * 60000
   )
@@ -125,10 +125,11 @@ function linuxTests(): void {
       const packages = ['omc', 'omsimulator']
       await installer.installOM(packages, version, '64')
       const resVer = await installer.showVersion('OMSimulator')
-      expect(resVer).toContain('unknown-linux')
+      expect(resVer).toContain('2.1.1')
     },
     10 * 60000
   )
+
 }
 
 function windowsTests(): void {

@@ -255,7 +255,7 @@ export async function installOM(
 }
 
 /**
- * Test if progrmm has been installed and print the version.
+ * Test if program has been installed and print the version.
  */
 export async function showVersion(
   program: string
@@ -264,9 +264,9 @@ export async function showVersion(
 
   if (out.exitCode !== 0) {
     core.debug(`Error message: ${out.stderr}`)
-    throw new Error(
-      `${program} could not be installed properly. Exit code: ${out.exitCode}`
-    )
+    core.setFailed(
+      Error(`${program} could not be installed properly. Exit code: ${out.exitCode}`)
+    );
   }
 
   const version = out.stdout.trim().split(' ')[1]
