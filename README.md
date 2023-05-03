@@ -46,6 +46,7 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 | nightly      | Windows | 64bit                     | ✔️       |
 | stable       | Windows | 64bit                     | ✔️       |
 | release      | Windows | 64bit                     | ✔️       |
+| 1.21.0       | Windows | 64bit                     | ✔️       |
 | 1.20.0       | Windows | 64bit                     | ✔️       |
 | 1.19.2       | Windows | 64bit                     | ✔️       |
 | 1.19.0       | Windows | 64bit                     | ☑️       |
