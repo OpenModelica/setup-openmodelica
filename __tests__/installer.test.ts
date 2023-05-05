@@ -37,7 +37,7 @@ function linuxTests(): void {
     let outVer: installer.VersionType
 
     outVer = installer.getOMVersion('1')
-    expect(outVer.version).toEqual('1.20.0')
+    expect(outVer.version).toEqual('1.21.0')
 
     outVer = installer.getOMVersion('1.18')
     expect(outVer.version).toEqual('1.18.1')
