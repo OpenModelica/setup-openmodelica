@@ -83,6 +83,12 @@
       "address": "https://build.openmodelica.org/apt"
     },
     {
+      "version": "1.21.0",
+      "aptname": "1.21.0-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.21.0/"
+    },
+    {
       "version": "1.20.0",
       "aptname": "1.20.0-1",
       "type": "release",
