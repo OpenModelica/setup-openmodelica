@@ -17,6 +17,7 @@ switch (osPlat) {
   default:
     throw new Error(`Platform ${osPlat} is not supported`)
 }
+commonTests()
 
 async function purgeOMC(): Promise<void> {
   const fileContent = fs.readFileSync('/var/log/apt/history.log').toString()
@@ -29,7 +30,6 @@ async function purgeOMC(): Promise<void> {
 }
 
 function linuxTests(): void {
-  /*
   test('Get Linux versions', async () => {
     const releaseVersions = installer.getOMVersions()
   })
@@ -129,17 +129,7 @@ function linuxTests(): void {
       expect(resVer).toContain('2.1.1')
     },
     10 * 60000
-  )*/
-
-  test(
-    'Install Modelica libraries',
-    async () => {
-      const libraries = ['Modelica 4.0.0', 'Modelica 3.2.3+maint.om']
-      await installer.installLibs(libraries)
-    },
-    10 * 60000
   )
-
 }
 
 function windowsTests(): void {
@@ -151,6 +141,17 @@ function windowsTests(): void {
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.19.2')
+    },
+    10 * 60000
+  )
+}
+
+function commonTests(): void {
+  test(
+    'Install Modelica libraries',
+    async () => {
+      const libraries = ['Modelica 4.0.0', 'Modelica 3.2.3+maint.om']
+      await installer.installLibs(libraries)
     },
     10 * 60000
   )
