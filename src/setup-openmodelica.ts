@@ -23,7 +23,7 @@ export async function run(): Promise<void> {
       packagesInput = ['omc']
     }
 
-    let librariesInput: string[] = core.getMultilineInput('libraries')
+    const librariesInput: string[] = core.getMultilineInput('libraries')
     core.debug(`librariesInput ${librariesInput}`)
 
     const version = installer.getOMVersion(versionInput)
@@ -35,16 +35,16 @@ export async function run(): Promise<void> {
     // TODO: Cache OpenModelica
 
     // Test if OpenModelica programs are installed
-    for(const pkg of packagesInput) {
+    for (const pkg of packagesInput) {
       switch (pkg) {
         case 'omc':
           await installer.showVersion('omc')
-          break;
+          break
         case 'omsimulator':
           await installer.showVersion('OMSimulator')
-          break;
+          break
         default:
-          break;
+          break
       }
     }
 

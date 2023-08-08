@@ -23,9 +23,13 @@ async function purgeOMC(): Promise<void> {
   const fileContent = fs.readFileSync('/var/log/apt/history.log').toString()
   const matches = fileContent.match('Install: .*omc.*')
   if (matches != null && matches.length > 0) {
-    const toRemove = matches[matches.length-1].replace('Install: ','').replace(/:[^\)]*\),*/g, '')
+    const toRemove = matches[matches.length - 1]
+      .replace('Install: ', '')
+      .replace(/:[^\)]*\),*/g, '')
     console.log(`Files to remove: ${toRemove}`)
-    await exec.exec(`/bin/bash -c "sudo apt-get purge ${toRemove} -qy ${'||'} sudo apt-get autoremove -qy"`)
+    await exec.exec(
+      `/bin/bash -c "sudo apt-get purge ${toRemove} -qy ${'||'} sudo apt-get autoremove -qy"`
+    )
   }
 }
 
