@@ -166,7 +166,9 @@ function aptInstallOM(packages, version, bit, useSudo) {
         // Check if distribution is available
         out = yield exec.getExecOutput(`/bin/bash -c "lsb_release -cs"`);
         const distro = out.stdout.trim();
-        if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
+        if (version.version !== 'nightly' &&
+            version.version !== 'stable' &&
+            version.version !== 'release') {
             const response = yield fetch(`${version.address}dists/${distro}`);
             if (response.status === 404) {
                 throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`);
@@ -285,7 +287,7 @@ exports.installLibs = installLibs;
  */
 function genInstallScript(librariesInput) {
     const filename = path.join((0, process_1.cwd)(), 'installLibs.mos');
-    let installPackages = [];
+    const installPackages = [];
     for (const library of librariesInput) {
         const matches = library.match(/\s*\b(\w+)\b\s*(.*)\b/);
         if (!matches) {
@@ -301,13 +303,13 @@ else
   print("Installed: ${library}\\n");
 end if;\n`);
     }
-    let content = `updatePackageIndex(); getErrorString();
+    const content = `updatePackageIndex(); getErrorString();
 ${installPackages.join('\n')}`;
     // Write file
     core.debug(`Writing ${filename}`);
     fs.writeFile(filename, content, function (err) {
         if (err) {
-            return console.error(err);
+            core.setFailed(Error(`Failed to write install script ${filename}.`));
         }
     });
     return filename;
@@ -376,7 +378,7 @@ function run() {
             if (!packagesInput) {
                 packagesInput = ['omc'];
             }
-            let librariesInput = core.getMultilineInput('libraries');
+            const librariesInput = core.getMultilineInput('libraries');
             core.debug(`librariesInput ${librariesInput}`);
             const version = installer.getOMVersion(versionInput);
             core.debug(`Installing OpenModelica ${version.version}`);

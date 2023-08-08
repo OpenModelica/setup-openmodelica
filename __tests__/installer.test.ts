@@ -81,7 +81,9 @@ function linuxTests(): void {
       await purgeOMC()
       const version = installer.getOMVersion('1.18.0')
       expect(version.version).toEqual('1.18.0')
-      await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow('Distribution jammy not available for OpenModelica version 1.18.0.')
+      await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow(
+        'Distribution jammy not available for OpenModelica version 1.18.0.'
+      )
     },
     10 * 60000
   )
