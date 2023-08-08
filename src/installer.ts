@@ -4,6 +4,7 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import { cwd } from 'process'
 import * as semver from 'semver'
 
 import json from './versions.json'
@@ -173,6 +174,7 @@ async function aptInstallOM(
 
   // Install OpenModelica packages
   core.info(`Running apt-get install`)
+  await exec.exec(`${sudo} apt-get clean`)
   await exec.exec(`${sudo} apt-get update`)
   for (const pkg of packages) {
     if (version.type === 'nightly' || !version.aptname) {
@@ -271,4 +273,58 @@ export async function showVersion(
 
   const version = out.stdout.trim().split(' ')[1]
   return version
+}
+
+/**
+ * Install Modelica libraries with the OpenModelica package manager
+ *
+ * @param librariesInput  List of Modelica libraries with versions
+ */
+export async function installLibs(librariesInput: string[]): Promise<void> {
+
+  const filename = genInstallScript(librariesInput)
+
+  // Run install script
+  core.info(`Running install script ${filename}`)
+  await exec.exec(`omc ${filename}`)
+
+  // Clean up
+  fs.rmSync(filename)
+}
+
+/**
+ * Write install script for Modelica libraries
+ * @param librariesInput 
+ */
+function genInstallScript(librariesInput: string[]): string {
+  const filename = path.join(cwd(), 'installLibs.mos')
+
+  let installPackages: string[] = [];
+  for (const library of librariesInput) {
+    const matches = library.match(/\s*\b(\w+)\b\s*(.*)\b/)
+    if (!matches) {
+      throw new Error(`Invalid library name ${library}`)
+    }
+    const name = matches[1];
+    const version = matches[2];
+    installPackages.push(`if not installPackage(${name}, "${version}", exactMatch=true) then
+  print("Failed to install ${library}");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ${library}\\n");
+end if;\n`);
+  }
+  let content = `updatePackageIndex(); getErrorString();
+${installPackages.join('\n')}`;
+
+  // Write file
+  core.debug(`Writing ${filename}`)
+  fs.writeFile(filename, content, function (err) {
+    if (err) {
+      return console.error(err);
+    }
+  });
+
+  return filename
 }

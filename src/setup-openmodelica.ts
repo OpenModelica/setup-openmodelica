@@ -23,6 +23,9 @@ export async function run(): Promise<void> {
       packagesInput = ['omc']
     }
 
+    let librariesInput: string[] = core.getMultilineInput('libraries')
+    core.debug(`librariesInput ${librariesInput}`)
+
     const version = installer.getOMVersion(versionInput)
     core.debug(`Installing OpenModelica ${version.version}`)
 
@@ -31,7 +34,7 @@ export async function run(): Promise<void> {
 
     // TODO: Cache OpenModelica
 
-    // Test if OpenModelica programms are installed
+    // Test if OpenModelica programs are installed
     for(const pkg of packagesInput) {
       switch (pkg) {
         case 'omc':
@@ -43,6 +46,11 @@ export async function run(): Promise<void> {
         default:
           break;
       }
+    }
+
+    // Install Modelica libraries
+    if (librariesInput) {
+      await installer.installLibs(librariesInput)
     }
   } catch (error) {
     core.debug('Caught error')

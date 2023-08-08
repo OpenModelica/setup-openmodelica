@@ -20,6 +20,14 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
   - For example `'omc'` for the OpenModelica Compiler or `'omsimulator'` for OMSimulator.
     Use one package per line.
+- `libraries`: Modelica libraries to install with the [OpenModelica package manager](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html).
+  - One library per line with exact version number. Will install exact match only and all dependencies.
+
+    ```yml
+      libraries: |
+        'Modelica 4.0.0'
+        'Modelica 3.2.3'
+    ```
 
 ## Available OpenModelica versions
 
@@ -64,22 +72,25 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 ## Examples
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.4
+- uses: AnHeuermann/setup-openmodelica@v0.5
   with:
     version: '1.20'
     packages: |
       'omc'
       'omsimulator'
+    libraries: |
+      'Modelica 4.0.0'
+      'Modelica 3.2.3+maint.om'
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.4
+- uses: AnHeuermann/setup-openmodelica@v0.5
   with:
     version: 'nightly'
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.4
+- uses: AnHeuermann/setup-openmodelica@v0.5
   with:
     version: 'stable'
 ```

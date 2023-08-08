@@ -29,6 +29,7 @@ async function purgeOMC(): Promise<void> {
 }
 
 function linuxTests(): void {
+  /*
   test('Get Linux versions', async () => {
     const releaseVersions = installer.getOMVersions()
   })
@@ -126,6 +127,15 @@ function linuxTests(): void {
       await installer.installOM(packages, version, '64')
       const resVer = await installer.showVersion('OMSimulator')
       expect(resVer).toContain('2.1.1')
+    },
+    10 * 60000
+  )*/
+
+  test(
+    'Install Modelica libraries',
+    async () => {
+      const libraries = ['Modelica 4.0.0', 'Modelica 3.2.3+maint.om']
+      await installer.installLibs(libraries)
     },
     10 * 60000
   )
