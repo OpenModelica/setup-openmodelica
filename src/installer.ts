@@ -4,6 +4,7 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import {cwd} from 'process'
 import * as semver from 'semver'
 
 import json from './versions.json'
@@ -120,9 +121,7 @@ async function aptInstallOM(
   }
 
   // Get architecture
-  let out = await exec.getExecOutput(
-    `/bin/bash -c "dpkg --print-architecture"`
-  )
+  let out = await exec.getExecOutput(`/bin/bash -c "dpkg --print-architecture"`)
   let arch = out.stdout.trim()
   switch (arch) {
     case 'amd64':
@@ -144,14 +143,18 @@ async function aptInstallOM(
   }
 
   // Check if distribution is available
-  out = await exec.getExecOutput(
-    `/bin/bash -c "lsb_release -cs"`
-  )
+  out = await exec.getExecOutput(`/bin/bash -c "lsb_release -cs"`)
   const distro = out.stdout.trim()
-  if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
+  if (
+    version.version !== 'nightly' &&
+    version.version !== 'stable' &&
+    version.version !== 'release'
+  ) {
     const response = await fetch(`${version.address}dists/${distro}`)
     if (response.status === 404) {
-      throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`)
+      throw new Error(
+        `Distribution ${distro} not available for OpenModelica version ${version.version}.`
+      )
     }
   }
 
@@ -173,13 +176,16 @@ async function aptInstallOM(
 
   // Install OpenModelica packages
   core.info(`Running apt-get install`)
+  await exec.exec(`${sudo} apt-get clean`)
   await exec.exec(`${sudo} apt-get update`)
   for (const pkg of packages) {
     if (version.type === 'nightly' || !version.aptname) {
       core.debug(`Running: /bin/bash -c "${sudo} apt-get install ${pkg} -qy"`)
       await exec.exec(`/bin/bash -c "${sudo} apt-get install ${pkg} -qy"`)
     } else {
-      core.debug(`/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy`)
+      core.debug(
+        `/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy`
+      )
       await exec.exec(
         `/bin/bash -c "${sudo} apt-get install ${pkg}=${version.aptname} -V -qy"`
       )
@@ -257,18 +263,71 @@ export async function installOM(
 /**
  * Test if program has been installed and print the version.
  */
-export async function showVersion(
-  program: string
-): Promise<string> {
+export async function showVersion(program: string): Promise<string> {
   const out = await exec.getExecOutput(program, ['--version'])
 
   if (out.exitCode !== 0) {
     core.debug(`Error message: ${out.stderr}`)
     core.setFailed(
-      Error(`${program} could not be installed properly. Exit code: ${out.exitCode}`)
-    );
+      Error(
+        `${program} could not be installed properly. Exit code: ${out.exitCode}`
+      )
+    )
   }
 
   const version = out.stdout.trim().split(' ')[1]
   return version
+}
+
+/**
+ * Install Modelica libraries with the OpenModelica package manager
+ *
+ * @param librariesInput  List of Modelica libraries with versions
+ */
+export async function installLibs(librariesInput: string[]): Promise<void> {
+  const filename = genInstallScript(librariesInput)
+
+  // Run install script
+  core.info(`Running install script ${filename}`)
+  await exec.exec(`omc ${filename}`)
+
+  // Clean up
+  fs.rmSync(filename)
+}
+
+/**
+ * Write install script for Modelica libraries
+ * @param librariesInput
+ */
+function genInstallScript(librariesInput: string[]): string {
+  const filename = path.join(cwd(), 'installLibs.mos')
+
+  const installPackages: string[] = []
+  for (const library of librariesInput) {
+    const matches = library.match(/\s*\b(\w+)\b\s*(.*)\b/)
+    if (!matches) {
+      throw new Error(`Invalid library name ${library}`)
+    }
+    const name = matches[1]
+    const version = matches[2]
+    installPackages.push(`if not installPackage(${name}, "${version}", exactMatch=true) then
+  print("Failed to install ${library}");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ${library}\\n");
+end if;\n`)
+  }
+  const content = `updatePackageIndex(); getErrorString();
+${installPackages.join('\n')}`
+
+  // Write file
+  core.debug(`Writing ${filename}`)
+  fs.writeFile(filename, content, function (err) {
+    if (err) {
+      core.setFailed(Error(`Failed to write install script ${filename}.`))
+    }
+  })
+
+  return filename
 }

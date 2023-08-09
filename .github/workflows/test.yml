@@ -32,4 +32,7 @@ jobs:
           packages: |
             'omc'
             'omsimulator'
+          libraries: |
+            'Modelica 4.0.0'
+            'Modelica 3.2.3+maint.om'
       - run: echo $OPENMODELICAHOME

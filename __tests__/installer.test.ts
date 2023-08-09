@@ -17,14 +17,19 @@ switch (osPlat) {
   default:
     throw new Error(`Platform ${osPlat} is not supported`)
 }
+commonTests()
 
 async function purgeOMC(): Promise<void> {
   const fileContent = fs.readFileSync('/var/log/apt/history.log').toString()
   const matches = fileContent.match('Install: .*omc.*')
   if (matches != null && matches.length > 0) {
-    const toRemove = matches[matches.length-1].replace('Install: ','').replace(/:[^\)]*\),*/g, '')
+    const toRemove = matches[matches.length - 1]
+      .replace('Install: ', '')
+      .replace(/:[^\)]*\),*/g, '')
     console.log(`Files to remove: ${toRemove}`)
-    await exec.exec(`/bin/bash -c "sudo apt-get purge ${toRemove} -qy ${'||'} sudo apt-get autoremove -qy"`)
+    await exec.exec(
+      `/bin/bash -c "sudo apt-get purge ${toRemove} -qy ${'||'} sudo apt-get autoremove -qy"`
+    )
   }
 }
 
@@ -76,7 +81,9 @@ function linuxTests(): void {
       await purgeOMC()
       const version = installer.getOMVersion('1.18.0')
       expect(version.version).toEqual('1.18.0')
-      await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow('Distribution jammy not available for OpenModelica version 1.18.0.')
+      await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow(
+        'Distribution jammy not available for OpenModelica version 1.18.0.'
+      )
     },
     10 * 60000
   )
@@ -129,7 +136,6 @@ function linuxTests(): void {
     },
     10 * 60000
   )
-
 }
 
 function windowsTests(): void {
@@ -141,6 +147,17 @@ function windowsTests(): void {
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.19.2')
+    },
+    10 * 60000
+  )
+}
+
+function commonTests(): void {
+  test(
+    'Install Modelica libraries',
+    async () => {
+      const libraries = ['Modelica 4.0.0', 'Modelica 3.2.3+maint.om']
+      await installer.installLibs(libraries)
     },
     10 * 60000
   )

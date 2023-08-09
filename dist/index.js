@@ -42,12 +42,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.showVersion = exports.installOM = exports.getOMVersion = exports.getOMVersions = void 0;
+exports.installLibs = exports.showVersion = exports.installOM = exports.getOMVersion = exports.getOMVersions = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
+const process_1 = __nccwpck_require__(7282);
 const semver = __importStar(__nccwpck_require__(1383));
 const versions_json_1 = __importDefault(__nccwpck_require__(7164));
 const util = __importStar(__nccwpck_require__(4024));
@@ -165,7 +166,9 @@ function aptInstallOM(packages, version, bit, useSudo) {
         // Check if distribution is available
         out = yield exec.getExecOutput(`/bin/bash -c "lsb_release -cs"`);
         const distro = out.stdout.trim();
-        if ((version.version !== 'nightly') && (version.version !== 'stable') && (version.version !== 'release')) {
+        if (version.version !== 'nightly' &&
+            version.version !== 'stable' &&
+            version.version !== 'release') {
             const response = yield fetch(`${version.address}dists/${distro}`);
             if (response.status === 404) {
                 throw new Error(`Distribution ${distro} not available for OpenModelica version ${version.version}.`);
@@ -180,6 +183,7 @@ function aptInstallOM(packages, version, bit, useSudo) {
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         // Install OpenModelica packages
         core.info(`Running apt-get install`);
+        yield exec.exec(`${sudo} apt-get clean`);
         yield exec.exec(`${sudo} apt-get update`);
         for (const pkg of packages) {
             if (version.type === 'nightly' || !version.aptname) {
@@ -261,6 +265,55 @@ function showVersion(program) {
     });
 }
 exports.showVersion = showVersion;
+/**
+ * Install Modelica libraries with the OpenModelica package manager
+ *
+ * @param librariesInput  List of Modelica libraries with versions
+ */
+function installLibs(librariesInput) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const filename = genInstallScript(librariesInput);
+        // Run install script
+        core.info(`Running install script ${filename}`);
+        yield exec.exec(`omc ${filename}`);
+        // Clean up
+        fs.rmSync(filename);
+    });
+}
+exports.installLibs = installLibs;
+/**
+ * Write install script for Modelica libraries
+ * @param librariesInput
+ */
+function genInstallScript(librariesInput) {
+    const filename = path.join((0, process_1.cwd)(), 'installLibs.mos');
+    const installPackages = [];
+    for (const library of librariesInput) {
+        const matches = library.match(/\s*\b(\w+)\b\s*(.*)\b/);
+        if (!matches) {
+            throw new Error(`Invalid library name ${library}`);
+        }
+        const name = matches[1];
+        const version = matches[2];
+        installPackages.push(`if not installPackage(${name}, "${version}", exactMatch=true) then
+  print("Failed to install ${library}");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ${library}\\n");
+end if;\n`);
+    }
+    const content = `updatePackageIndex(); getErrorString();
+${installPackages.join('\n')}`;
+    // Write file
+    core.debug(`Writing ${filename}`);
+    fs.writeFile(filename, content, function (err) {
+        if (err) {
+            core.setFailed(Error(`Failed to write install script ${filename}.`));
+        }
+    });
+    return filename;
+}
 
 
 /***/ }),
@@ -325,12 +378,14 @@ function run() {
             if (!packagesInput) {
                 packagesInput = ['omc'];
             }
+            const librariesInput = core.getMultilineInput('libraries');
+            core.debug(`librariesInput ${librariesInput}`);
             const version = installer.getOMVersion(versionInput);
             core.debug(`Installing OpenModelica ${version.version}`);
             // Install OpenModelica
             yield installer.installOM(packagesInput, version, architectureInput);
             // TODO: Cache OpenModelica
-            // Test if OpenModelica programms are installed
+            // Test if OpenModelica programs are installed
             for (const pkg of packagesInput) {
                 switch (pkg) {
                     case 'omc':
@@ -342,6 +397,10 @@ function run() {
                     default:
                         break;
                 }
+            }
+            // Install Modelica libraries
+            if (librariesInput) {
+                yield installer.installLibs(librariesInput);
             }
         }
         catch (error) {
@@ -62316,6 +62375,14 @@ module.exports = require("os");
 
 "use strict";
 module.exports = require("path");
+
+/***/ }),
+
+/***/ 7282:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("process");
 
 /***/ }),
 

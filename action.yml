@@ -18,6 +18,11 @@ inputs:
                   Each package has to be in a new line. Ignored on Windows.'
     required: false
     default: 'omc'
+  libraries:
+    description: 'Optional list of Modelica libraries to install.
+                  One library per line, separate version number with a space <library> <version>
+                  Example: "Modelica 4.0.0"'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
