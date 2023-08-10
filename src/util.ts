@@ -44,7 +44,7 @@ async function getDownloadPromise(url: string, dest: string): Promise<void> {
       let cur = 0
       let lastTime = 0
 
-      if (response.statusCode === 200) {
+      if (response.statusCode === 200 || response.statusCode === 302) {
         response.pipe(file)
       } else {
         file.close()

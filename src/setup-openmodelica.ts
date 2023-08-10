@@ -26,6 +26,10 @@ export async function run(): Promise<void> {
     const librariesInput: string[] = core.getMultilineInput('libraries')
     core.debug(`librariesInput ${librariesInput}`)
 
+    const omcDiffInput: boolean = core.getBooleanInput('omc-diff')
+    core.debug(`omcDiffInput ${omcDiffInput}`)
+
+    // Get available OpenModelica versions
     const version = installer.getOMVersion(versionInput)
     core.debug(`Installing OpenModelica ${version.version}`)
 
@@ -51,6 +55,11 @@ export async function run(): Promise<void> {
     // Install Modelica libraries
     if (librariesInput) {
       await installer.installLibs(librariesInput)
+    }
+
+    // Install omc-diff
+    if (omcDiffInput) {
+      await installer.installOmcDiff(true)
     }
   } catch (error) {
     core.debug('Caught error')

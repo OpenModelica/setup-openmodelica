@@ -23,6 +23,10 @@ inputs:
                   One library per line, separate version number with a space <library> <version>
                   Example: "Modelica 4.0.0"'
     required: false
+  omc-diff:
+    description: 'Install OpenModelica omc-diff tool.'
+    required: false
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

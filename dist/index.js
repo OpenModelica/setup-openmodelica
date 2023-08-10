@@ -42,16 +42,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.installLibs = exports.showVersion = exports.installOM = exports.getOMVersion = exports.getOMVersions = void 0;
+exports.installOmcDiff = exports.installLibs = exports.showVersion = exports.installOM = exports.getOMVersion = exports.getOMVersions = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
+const process_1 = __nccwpck_require__(7282);
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
-const process_1 = __nccwpck_require__(7282);
 const semver = __importStar(__nccwpck_require__(1383));
-const versions_json_1 = __importDefault(__nccwpck_require__(7164));
 const util = __importStar(__nccwpck_require__(4024));
+const versions_json_1 = __importDefault(__nccwpck_require__(7164));
 // Store information about the environment
 const osPlat = os.platform(); // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 core.debug(`platform: ${osPlat}`);
@@ -314,6 +314,37 @@ ${installPackages.join('\n')}`;
     });
     return filename;
 }
+/**
+ * Install OpenModelica omc-diff program.
+ *
+ * @param useSudo       true if root rights are required.
+ */
+function installOmcDiff(useSudo) {
+    return __awaiter(this, void 0, void 0, function* () {
+        switch (osPlat) {
+            case 'linux':
+                break;
+            case 'win32':
+                core.info(`Windows version of OpenModelica already installs omc-diff.`);
+                return;
+            default:
+                throw new Error(`omc-diff not available for platform ${osPlat}. Open a feature request on https://github.com/AnHeuermann/omc-diff.`);
+        }
+        const sudo = useSudo ? 'sudo' : '';
+        // Download executable from https://github.com/AnHeuermann/omc-diff/
+        const url = 'https://github.com/AnHeuermann/omc-diff/releases/download/v0.1/linux-64.tar.gz';
+        const file = url.split('/').pop();
+        if (file === undefined) {
+            throw new Error(`Something wrong with the url`);
+        }
+        yield exec.exec(`wget ${url}`);
+        // Extract .tar.gz
+        yield exec.exec(`${sudo} tar -xvf ${file} -C /usr/bin/`);
+        // Clean up
+        fs.rmSync(file);
+    });
+}
+exports.installOmcDiff = installOmcDiff;
 
 
 /***/ }),
@@ -380,6 +411,9 @@ function run() {
             }
             const librariesInput = core.getMultilineInput('libraries');
             core.debug(`librariesInput ${librariesInput}`);
+            const omcDiffInput = core.getBooleanInput('omc-diff');
+            core.debug(`omcDiffInput ${omcDiffInput}`);
+            // Get available OpenModelica versions
             const version = installer.getOMVersion(versionInput);
             core.debug(`Installing OpenModelica ${version.version}`);
             // Install OpenModelica
@@ -401,6 +435,10 @@ function run() {
             // Install Modelica libraries
             if (librariesInput) {
                 yield installer.installLibs(librariesInput);
+            }
+            // Install omc-diff
+            if (omcDiffInput) {
+                yield installer.installOmcDiff(true);
             }
         }
         catch (error) {
@@ -489,7 +527,7 @@ function getDownloadPromise(url, dest) {
                 const wait = 1000; // wait in milliseconds
                 let cur = 0;
                 let lastTime = 0;
-                if (response.statusCode === 200) {
+                if (response.statusCode === 200 || response.statusCode === 302) {
                     response.pipe(file);
                 }
                 else {

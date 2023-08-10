@@ -136,6 +136,16 @@ function linuxTests(): void {
     },
     10 * 60000
   )
+
+  test(
+    'Install omc-diff',
+    async () => {
+      await installer.installOmcDiff(true)
+      const fileExists = fs.existsSync('/usr/bin/omc-diff')
+      expect(fileExists).toBe(true)
+    },
+    10 * 60000
+  )
 }
 
 function windowsTests(): void {
