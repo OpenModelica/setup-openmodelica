@@ -1,14 +1,13 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
+import {cwd} from 'process'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import {cwd} from 'process'
 import * as semver from 'semver'
-
-import json from './versions.json'
 import * as util from './util'
+import json from './versions.json'
 
 export type VersionType = {
   version: string
@@ -330,4 +329,41 @@ ${installPackages.join('\n')}`
   })
 
   return filename
+}
+
+/**
+ * Install OpenModelica omc-diff program.
+ *
+ * @param useSudo       true if root rights are required.
+ */
+export async function installOmcDiff(useSudo: boolean): Promise<void> {
+
+  switch (osPlat) {
+    case 'linux':
+      break
+    case 'win32':
+      core.info(`Windows version of OpenModelica already installs omc-diff.`)
+      return
+    default:
+      throw new Error(
+        `omc-diff not available for platform ${osPlat}. Open a feature request on https://github.com/AnHeuermann/omc-diff.`
+      )
+  }
+
+  const sudo: string = useSudo ? 'sudo' : ''
+
+  // Download executable from https://github.com/AnHeuermann/omc-diff/
+  const url =
+    'https://github.com/AnHeuermann/omc-diff/releases/download/v0.1/linux-64.tar.gz'
+  const file = url.split('/').pop()
+  if (file === undefined) {
+    throw new Error(`Something wrong with the url`)
+  }
+  await exec.exec(`wget ${url}`)
+
+  // Extract .tar.gz
+  await exec.exec(`${sudo} tar -xvf ${file} -C /usr/bin/`)
+
+  // Clean up
+  fs.rmSync(file)
 }

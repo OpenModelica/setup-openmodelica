@@ -35,4 +35,5 @@ jobs:
           libraries: |
             'Modelica 4.0.0'
             'Modelica 3.2.3+maint.om'
+          omc-diff: true
       - run: echo $OPENMODELICAHOME

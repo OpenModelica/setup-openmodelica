@@ -81,6 +81,7 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
     libraries: |
       'Modelica 4.0.0'
       'Modelica 3.2.3+maint.om'
+    omc-diff: true
 ```
 
 ```yaml
@@ -116,6 +117,14 @@ $ npm run build
 $ npm run package
 $ npm test
 ```
+
+## License
+
+This action is licensed under the MIT license, see [LICENSE.md](./LICENSE.md).
+OpenModelica and all OpenModelica tools are licensed under
+[GNU Affero General Public License version 3](https://www.gnu.org/licenses/agpl-3.0.en.html)
+or the 
+[OSMC (Open Source Modelica Consortium) Public License (OSMC-PL) version 1.8](https://openmodelica.org/osmc-pl/osmc-pl-1.8.txt).
 
 ## Acknowledgments
 
