@@ -72,7 +72,7 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 ## Examples
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.5
+- uses: AnHeuermann/setup-openmodelica@v0.6
   with:
     version: '1.20'
     packages: |
@@ -85,13 +85,13 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.5
+- uses: AnHeuermann/setup-openmodelica@v0.6
   with:
     version: 'nightly'
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.5
+- uses: AnHeuermann/setup-openmodelica@v0.6
   with:
     version: 'stable'
 ```
