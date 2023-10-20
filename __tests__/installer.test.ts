@@ -95,7 +95,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.22.0~dev-')
+      expect(resVer).toContain('1.23.0~dev-')
     },
     10 * 60000
   )
@@ -107,7 +107,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.21.')
+      expect(resVer).toContain('1.22.')
     },
     10 * 60000
   )
