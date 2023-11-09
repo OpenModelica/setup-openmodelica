@@ -36,6 +36,9 @@ export function getOMVersions(): string[] {
     case 'win32':
       osVersionLst = json.windows
       break
+    case 'darwin':
+      osVersionLst = json.mac
+      break
     default:
     // Array stays empty
   }
@@ -53,7 +56,7 @@ export function getOMVersions(): string[] {
  * @returns Highest available version matching versionInput.
  */
 export function getOMVersion(versionInput: string): VersionType {
-  if (osPlat !== 'linux' && osPlat !== 'win32') {
+  if (osPlat !== 'linux' && osPlat !== 'win32' && osPlat !== 'darwin') {
     throw new Error(`getOMVersion: OS ${osPlat} not supported.`)
   }
 
@@ -65,15 +68,41 @@ export function getOMVersion(versionInput: string): VersionType {
     versionInput === 'release'
   ) {
     maxVersion = versionInput
+  } else if (versionInput.includes('dev')) {
+    maxVersion = versionInput
   } else {
     // Use the highest available version that matches versionInput
-    const availableReleases = getOMVersions()
-    core.debug(`Available versions ${availableReleases}`)
+    let availableReleases = getOMVersions()
     maxVersion = semver.maxSatisfying(availableReleases, versionInput)
     if (maxVersion == null) {
-      throw new Error(
-        `Could not find a OpenModelica version that matches ${versionInput}`
-      )
+      // Check pre-releases
+      core.debug(`Checking pre releases`)
+      // Workaround so that 20 is smaller than 100. Add leading zeroes
+      for (let i=0; i<availableReleases.length; i++) {
+        if (availableReleases[i].includes('-dev-')) {
+          const splittedArray = availableReleases[i].split('-dev-')
+          core.debug(`Splitted array of ${availableReleases[i].toString()}: ${splittedArray.toString()}`)
+          if (Number(splittedArray[1]) < 100) {
+            core.debug(`Smaller 100`)
+            availableReleases[i] = `${splittedArray[0]}-dev-00${splittedArray[1]}`
+          } else if (Number(splittedArray[1]) < 1000) {
+            core.debug(`Smaller 1000`)
+            availableReleases[i] = `${splittedArray[0]}-dev-0${splittedArray[1]}`
+          }
+        }
+      }
+      core.debug(`Available versions: ${availableReleases.toString()}`)
+
+      maxVersion = semver.maxSatisfying(availableReleases, `>${versionInput}-dev`, { includePrerelease: true })
+      if (maxVersion == null) {
+        throw new Error(
+          `Could not find a OpenModelica version that matches ${versionInput}`
+        )
+      } else {
+        // Remove leading zeroes
+        const splittedArray = maxVersion.split('-dev-')
+        maxVersion = `${splittedArray[0]}-dev-${Number(splittedArray[1])}`
+      }
     }
   }
   core.debug(`Searching for ${versionInput}, found max version: ${maxVersion}`)
@@ -86,6 +115,9 @@ export function getOMVersion(versionInput: string): VersionType {
       break
     case 'win32':
       osVersionLst = json.windows
+      break
+    case 'darwin':
+      osVersionLst = json.mac
       break
     default:
     // Array stays empty
@@ -236,6 +268,28 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
 }
 
 /**
+ * Install omc using the Windows installer executable.
+ *
+ * @param version       Version object to install.
+ */
+async function macInstallOM(version: VersionType): Promise<void> {
+
+  // Download OpenModelica pkg file tmp/
+  const pkg = await util.downloadCachedSync(
+    version.address,
+    'tmp',
+    version.version === 'nightly'
+  )
+
+  // Run installer
+  core.info(`Running installer with package ${pkg}`)
+  await exec.exec(`installer -pkg ${pkg} -target CurrentUserHomeDirectory`)
+
+  // Clean up
+  fs.rmSync('tmp', {recursive: true})
+}
+
+/**
  * Install OpenModelica packages (omc, OMSimulator)
  *
  * @param packages            (APT) packages to install.
@@ -253,6 +307,9 @@ export async function installOM(
       break
     case 'win32':
       await winInstallOM(version, architectureInput)
+      break
+    case 'darwin':
+      await macInstallOM(version)
       break
     default:
       throw new Error(`Platform ${osPlat} is not supported`)

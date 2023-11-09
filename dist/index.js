@@ -47,13 +47,13 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const process_1 = __nccwpck_require__(7282);
 const fs = __importStar(__nccwpck_require__(7147));
-const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(1383));
 const util = __importStar(__nccwpck_require__(4024));
 const versions_json_1 = __importDefault(__nccwpck_require__(7164));
 // Store information about the environment
-const osPlat = os.platform(); // possible values: win32 (Windows), linux (Linux), darwin (macOS)
+//const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
+let osPlat = "darwin";
 core.debug(`platform: ${osPlat}`);
 /**
  * @returns An array of all OpenModelica versions available for download / install
@@ -68,6 +68,9 @@ function getOMVersions() {
             break;
         case 'win32':
             osVersionLst = versions_json_1.default.windows;
+            break;
+        case 'darwin':
+            osVersionLst = versions_json_1.default.mac;
             break;
         default:
         // Array stays empty
@@ -84,7 +87,7 @@ exports.getOMVersions = getOMVersions;
  * @returns Highest available version matching versionInput.
  */
 function getOMVersion(versionInput) {
-    if (osPlat !== 'linux' && osPlat !== 'win32') {
+    if (osPlat !== 'linux' && osPlat !== 'win32' && osPlat !== 'darwin') {
         throw new Error(`getOMVersion: OS ${osPlat} not supported.`);
     }
     let maxVersion;
@@ -93,13 +96,41 @@ function getOMVersion(versionInput) {
         versionInput === 'release') {
         maxVersion = versionInput;
     }
+    else if (versionInput.includes('dev')) {
+        maxVersion = versionInput;
+    }
     else {
         // Use the highest available version that matches versionInput
-        const availableReleases = getOMVersions();
-        core.debug(`Available versions ${availableReleases}`);
+        let availableReleases = getOMVersions();
         maxVersion = semver.maxSatisfying(availableReleases, versionInput);
         if (maxVersion == null) {
-            throw new Error(`Could not find a OpenModelica version that matches ${versionInput}`);
+            // Check pre-releases
+            core.debug(`Checking pre releases`);
+            // Workaround so that 20 is smaller than 100. Add leading zeroes
+            for (let i = 0; i < availableReleases.length; i++) {
+                if (availableReleases[i].includes('-dev-')) {
+                    const splittedArray = availableReleases[i].split('-dev-');
+                    core.debug(`Splitted array of ${availableReleases[i].toString()}: ${splittedArray.toString()}`);
+                    if (Number(splittedArray[1]) < 100) {
+                        core.debug(`Smaller 100`);
+                        availableReleases[i] = `${splittedArray[0]}-dev-00${splittedArray[1]}`;
+                    }
+                    else if (Number(splittedArray[1]) < 1000) {
+                        core.debug(`Smaller 1000`);
+                        availableReleases[i] = `${splittedArray[0]}-dev-0${splittedArray[1]}`;
+                    }
+                }
+            }
+            core.debug(`Available versions: ${availableReleases.toString()}`);
+            maxVersion = semver.maxSatisfying(availableReleases, `>${versionInput}-dev`, { includePrerelease: true });
+            if (maxVersion == null) {
+                throw new Error(`Could not find a OpenModelica version that matches ${versionInput}`);
+            }
+            else {
+                // Remove leading zeroes
+                const splittedArray = maxVersion.split('-dev-');
+                maxVersion = `${splittedArray[0]}-dev-${Number(splittedArray[1])}`;
+            }
         }
     }
     core.debug(`Searching for ${versionInput}, found max version: ${maxVersion}`);
@@ -111,6 +142,9 @@ function getOMVersion(versionInput) {
             break;
         case 'win32':
             osVersionLst = versions_json_1.default.windows;
+            break;
+        case 'darwin':
+            osVersionLst = versions_json_1.default.mac;
             break;
         default:
         // Array stays empty
@@ -229,6 +263,22 @@ function winInstallOM(version, bit) {
     });
 }
 /**
+ * Install omc using the Windows installer executable.
+ *
+ * @param version       Version object to install.
+ */
+function macInstallOM(version) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Download OpenModelica pkg file tmp/
+        const pkg = yield util.downloadCachedSync(version.address, 'tmp', version.version === 'nightly');
+        // Run installer
+        core.info(`Running installer with package ${pkg}`);
+        yield exec.exec(`installer -pkg ${pkg} -target CurrentUserHomeDirectory`);
+        // Clean up
+        fs.rmSync('tmp', { recursive: true });
+    });
+}
+/**
  * Install OpenModelica packages (omc, OMSimulator)
  *
  * @param packages            (APT) packages to install.
@@ -243,6 +293,9 @@ function installOM(packages, version, architectureInput) {
                 break;
             case 'win32':
                 yield winInstallOM(version, architectureInput);
+                break;
+            case 'darwin':
+                yield macInstallOM(version);
                 break;
             default:
                 throw new Error(`Platform ${osPlat} is not supported`);
@@ -85876,7 +85929,7 @@ module.exports = require("zlib");
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"windows":[{"version":"nightly","type":"nightly","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/nightly-builds/64bit/OpenModelica-latest.exe"},{"version":"stable","type":"stable","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.21/0/64bit/OpenModelica-v1.21.0-64bit.exe"},{"version":"release","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.21/0/64bit/OpenModelica-v1.21.0-64bit.exe"},{"version":"1.22.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"},{"version":"1.21.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.21/0/64bit/OpenModelica-v1.21.0-64bit.exe"},{"version":"1.20.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.20/0/64bit/OpenModelica-v1.20.0-64bit.exe"},{"version":"1.19.2","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"},{"version":"1.19.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/0/64bit/OpenModelica-v1.19.0-64bit.exe"},{"version":"1.18.1","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.18/1/64bit/OpenModelica-v1.18.1-64bit.exe"},{"version":"1.18.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.18/0/64bit/OpenModelica-v1.18.0-64bit.exe"},{"version":"1.17.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.17/0/64bit/OpenModelica-v1.17.0-64bit.exe"}],"linux":[{"version":"nightly","type":"nightly","address":"https://build.openmodelica.org/apt"},{"version":"stable","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"release","type":"release","address":"https://build.openmodelica.org/apt"},{"version":"1","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"1.22.0","aptname":"1.22.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.22.0/"},{"version":"1.21.0","aptname":"1.21.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.21.0/"},{"version":"1.20.0","aptname":"1.20.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.20.0/"},{"version":"1.19.2","aptname":"1.19.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.19.2/"},{"version":"1.18.1","aptname":"1.18.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.1/"},{"version":"1.18.0","aptname":"1.18.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.0/"},{"version":"1.17.0","aptname":"1.17.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.17.0/"},{"version":"1.16.5","aptname":"1.16.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.5/"},{"version":"1.16.2","aptname":"1.16.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.2/"},{"version":"1.16.1","aptname":"1.16.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.1/"},{"version":"1.16.0","aptname":"1.16.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.0/"},{"version":"1.14.2","aptname":"1.14.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.2/"},{"version":"1.14.1","aptname":"1.14.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.1/"},{"version":"1.13.2","aptname":"1.13.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.2/"},{"version":"1.13.0","aptname":"1.13.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.0/"},{"version":"1.12.0","aptname":"1.12.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.12.0/"},{"version":"1.11.0","aptname":"1.11.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.11.0/"},{"version":"1.9.5","aptname":"1.9.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.5/"},{"version":"1.9.4","aptname":"1.9.4-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.4/"},{"version":"1.9.3","aptname":"1.9.3-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.3/"},{"version":"1.9.2","aptname":"1.9.2-beta-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.2/"},{"version":"1.9.1","aptname":"1.9.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.1/"},{"version":"1.9.0","aptname":"1.9.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.0/"},{"version":"1.8.1","aptname":"1.8.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.1/"},{"version":"1.8.0","aptname":"1.8.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.0/"},{"version":"1.7.0","aptname":"1.7.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.7.0/"},{"version":"1.6.0","aptname":"1.6.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.6.0/"},{"version":"1.5.0","aptname":"1.5.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.5.0/"}],"mac":[{"version":"1.22.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"}]}');
+module.exports = JSON.parse('{"windows":[{"version":"nightly","type":"nightly","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/nightly-builds/64bit/OpenModelica-latest.exe"},{"version":"stable","type":"stable","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"},{"version":"release","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"},{"version":"1.22.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"},{"version":"1.21.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.21/0/64bit/OpenModelica-v1.21.0-64bit.exe"},{"version":"1.20.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.20/0/64bit/OpenModelica-v1.20.0-64bit.exe"},{"version":"1.19.2","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/2/64bit/OpenModelica-v1.19.2-64bit.exe"},{"version":"1.19.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.19/0/64bit/OpenModelica-v1.19.0-64bit.exe"},{"version":"1.18.1","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.18/1/64bit/OpenModelica-v1.18.1-64bit.exe"},{"version":"1.18.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.18/0/64bit/OpenModelica-v1.18.0-64bit.exe"},{"version":"1.17.0","type":"release","arch":"64","address":"https://build.openmodelica.org/omc/builds/windows/releases/1.17/0/64bit/OpenModelica-v1.17.0-64bit.exe"}],"linux":[{"version":"nightly","type":"nightly","address":"https://build.openmodelica.org/apt"},{"version":"stable","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"release","type":"release","address":"https://build.openmodelica.org/apt"},{"version":"1","type":"stable","address":"https://build.openmodelica.org/apt"},{"version":"1.22.0","aptname":"1.22.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.22.0/"},{"version":"1.21.0","aptname":"1.21.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.21.0/"},{"version":"1.20.0","aptname":"1.20.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.20.0/"},{"version":"1.19.2","aptname":"1.19.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.19.2/"},{"version":"1.18.1","aptname":"1.18.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.1/"},{"version":"1.18.0","aptname":"1.18.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.18.0/"},{"version":"1.17.0","aptname":"1.17.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.17.0/"},{"version":"1.16.5","aptname":"1.16.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.5/"},{"version":"1.16.2","aptname":"1.16.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.2/"},{"version":"1.16.1","aptname":"1.16.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.1/"},{"version":"1.16.0","aptname":"1.16.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.16.0/"},{"version":"1.14.2","aptname":"1.14.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.2/"},{"version":"1.14.1","aptname":"1.14.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.14.1/"},{"version":"1.13.2","aptname":"1.13.2-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.2/"},{"version":"1.13.0","aptname":"1.13.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.13.0/"},{"version":"1.12.0","aptname":"1.12.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.12.0/"},{"version":"1.11.0","aptname":"1.11.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.11.0/"},{"version":"1.9.5","aptname":"1.9.5-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.5/"},{"version":"1.9.4","aptname":"1.9.4-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.4/"},{"version":"1.9.3","aptname":"1.9.3-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.3/"},{"version":"1.9.2","aptname":"1.9.2-beta-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.2/"},{"version":"1.9.1","aptname":"1.9.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.1/"},{"version":"1.9.0","aptname":"1.9.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.9.0/"},{"version":"1.8.1","aptname":"1.8.1-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.1/"},{"version":"1.8.0","aptname":"1.8.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.8.0/"},{"version":"1.7.0","aptname":"1.7.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.7.0/"},{"version":"1.6.0","aptname":"1.6.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.6.0/"},{"version":"1.5.0","aptname":"1.5.0-1","type":"release","address":"https://build.openmodelica.org/omc/builds/linux/releases/1.5.0/"}],"mac":[{"version":"nightly","type":"nightly","arch":"arm64","address":"https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-latest.pkg"},{"version":"1.22.0-dev-351","type":"nightly","arch":"arm64","address":"https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.22.0-dev-351-g208d90052b-cmake-Darwin.pkg"},{"version":"1.22.0-dev-44","type":"nightly","arch":"arm64","address":"https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.22.0-dev-44-g01cf43c698-cmake-Darwin.pkg"},{"version":"1.21.0-dev-399","type":"nightly","arch":"arm64","address":"https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.21.0-dev-399-g0273588b39-cmake-Darwin.pkg"}]}');
 
 /***/ }),
 

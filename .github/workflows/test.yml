@@ -22,13 +22,17 @@ jobs:
   test: # make sure the action works on a clean machine without building
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - version: 'stable'
+          - version: '1.22.0-dev-351'
+            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./
         with:
-          version: 'stable'
+          version: ${{ matrix.version }}
           packages: |
             'omc'
             'omsimulator'

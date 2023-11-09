@@ -14,6 +14,9 @@ switch (osPlat) {
   case 'win32':
     windowsTests()
     break
+  case 'darwin':
+    macTests()
+    break
   default:
     throw new Error(`Platform ${osPlat} is not supported`)
 }
@@ -157,6 +160,22 @@ function windowsTests(): void {
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.19.2')
+    },
+    10 * 60000
+  )
+}
+
+function macTests(): void {
+  test(
+    'Install 64 bit OpenModelica nightly 1.22.0-dev-351',
+    async () => {
+      let version = installer.getOMVersion('1.22.0-dev-44')
+      expect(version.version).toEqual('1.22.0-dev-44')
+      version = installer.getOMVersion('1.22.0')
+      expect(version.version).toEqual('1.22.0-dev-351')
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
+      expect(resVer).toContain('1.22.0')
     },
     10 * 60000
   )

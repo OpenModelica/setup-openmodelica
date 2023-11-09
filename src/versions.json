@@ -259,10 +259,28 @@
   ],
   "mac": [
     {
-      "version": "1.22.0",
-      "type": "release",
-      "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"
+      "version": "nightly",
+      "type": "nightly",
+      "arch": "arm64",
+      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-latest.pkg"
+    },
+    {
+      "version": "1.22.0-dev-351",
+      "type": "nightly",
+      "arch": "arm64",
+      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.22.0-dev-351-g208d90052b-cmake-Darwin.pkg"
+    },
+    {
+      "version": "1.22.0-dev-44",
+      "type": "nightly",
+      "arch": "arm64",
+      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.22.0-dev-44-g01cf43c698-cmake-Darwin.pkg"
+    },
+    {
+      "version": "1.21.0-dev-399",
+      "type": "nightly",
+      "arch": "arm64",
+      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.21.0-dev-399-g0273588b39-cmake-Darwin.pkg"
     }
   ]
 }
