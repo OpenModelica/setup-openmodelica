@@ -47,13 +47,13 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const process_1 = __nccwpck_require__(7282);
 const fs = __importStar(__nccwpck_require__(7147));
+const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(1383));
 const util = __importStar(__nccwpck_require__(4024));
 const versions_json_1 = __importDefault(__nccwpck_require__(7164));
 // Store information about the environment
-//const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
-let osPlat = "darwin";
+const osPlat = os.platform(); // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 core.debug(`platform: ${osPlat}`);
 /**
  * @returns An array of all OpenModelica versions available for download / install
@@ -101,7 +101,7 @@ function getOMVersion(versionInput) {
     }
     else {
         // Use the highest available version that matches versionInput
-        let availableReleases = getOMVersions();
+        const availableReleases = getOMVersions();
         maxVersion = semver.maxSatisfying(availableReleases, versionInput);
         if (maxVersion == null) {
             // Check pre-releases

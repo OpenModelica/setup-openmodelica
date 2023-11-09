@@ -72,7 +72,7 @@ export function getOMVersion(versionInput: string): VersionType {
     maxVersion = versionInput
   } else {
     // Use the highest available version that matches versionInput
-    let availableReleases = getOMVersions()
+    const availableReleases = getOMVersions()
     maxVersion = semver.maxSatisfying(availableReleases, versionInput)
     if (maxVersion == null) {
       // Check pre-releases

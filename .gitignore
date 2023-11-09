@@ -100,3 +100,6 @@ lib/**/*
 
 # Ignore mos scripts
 *.mos
+
+# Ignore VSCode settings
+.vscode/
