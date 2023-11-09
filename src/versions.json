@@ -19,6 +19,12 @@
       "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.21/0/64bit/OpenModelica-v1.21.0-64bit.exe"
     },
     {
+      "version": "1.22.0",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"
+    },
+    {
       "version": "1.21.0",
       "type": "release",
       "arch": "64",
@@ -81,6 +87,12 @@
       "version": "1",
       "type": "stable",
       "address": "https://build.openmodelica.org/apt"
+    },
+    {
+      "version": "1.22.0",
+      "aptname": "1.22.0-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.22.0/"
     },
     {
       "version": "1.21.0",
@@ -245,5 +257,12 @@
       "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.5.0/"
     }
   ],
-  "mac": []
+  "mac": [
+    {
+      "version": "1.22.0",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.22/0/64bit/OpenModelica-v1.22.0-64bit.exe"
+    }
+  ]
 }
