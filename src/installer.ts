@@ -337,7 +337,6 @@ ${installPackages.join('\n')}`
  * @param useSudo       true if root rights are required.
  */
 export async function installOmcDiff(useSudo: boolean): Promise<void> {
-
   switch (osPlat) {
     case 'linux':
       break
