@@ -125,6 +125,18 @@ function linuxTests(): void {
   )
 
   test(
+    'Install 64 bit OpenModelica 1.19',
+    async () => {
+      await purgeOMC()
+      const version = installer.getOMVersion('1.19')
+      await installer.installOM(['omc'], version, '64')
+      const resVer = await installer.showVersion('omc')
+      expect(resVer).toContain('1.19.2')
+    },
+    10 * 60000
+  )
+
+  test(
     'Install OMSimulator',
     async () => {
       await purgeOMC()

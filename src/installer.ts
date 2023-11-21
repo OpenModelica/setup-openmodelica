@@ -236,6 +236,42 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
 }
 
 /**
+<<<<<<< Updated upstream
+=======
+ * Install omc using the Windows installer executable.
+ *
+ * @param version       Version object to install.
+ */
+async function macInstallOM(version: VersionType): Promise<void> {
+
+  // Download OpenModelica pkg file tmp/
+  const pkg = await util.downloadCachedSync(
+    version.address,
+    'tmp',
+    version.version === 'nightly'
+  )
+
+  // Run installer
+  core.info(`Running installer with package ${pkg}`)
+  await exec.exec(
+    `installer -pkg ${pkg} -target CurrentUserHomeDirectory -verbose`
+  )
+
+  // Set PATH
+  fs.appendFile(
+    '/etc/profile',
+    '\nexport PATH="$PATH:/Users/runner/OpenModelica"',
+    err => {
+      if (err) throw err
+    }
+  )
+
+  // Clean up
+  fs.rmSync('tmp', {recursive: true})
+}
+
+/**
+>>>>>>> Stashed changes
  * Install OpenModelica packages (omc, OMSimulator)
  *
  * @param packages            (APT) packages to install.
