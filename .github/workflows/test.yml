@@ -23,12 +23,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        version: [stable, '1.19']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./
         with:
-          version: 'stable'
+          version: ${{ matrix.version }}
           packages: |
             'omc'
             'omsimulator'

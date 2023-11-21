@@ -229,30 +229,6 @@ function winInstallOM(version, bit) {
     });
 }
 /**
-<<<<<<< Updated upstream
-=======
- * Install omc using the Windows installer executable.
- *
- * @param version       Version object to install.
- */
-function macInstallOM(version) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // Download OpenModelica pkg file tmp/
-        const pkg = yield util.downloadCachedSync(version.address, 'tmp', version.version === 'nightly');
-        // Run installer
-        core.info(`Running installer with package ${pkg}`);
-        yield exec.exec(`installer -pkg ${pkg} -target CurrentUserHomeDirectory -verbose`);
-        // Set PATH
-        fs.appendFile('/etc/profile', '\nexport PATH="$PATH:/Users/runner/OpenModelica"', err => {
-            if (err)
-                throw err;
-        });
-        // Clean up
-        fs.rmSync('tmp', { recursive: true });
-    });
-}
-/**
->>>>>>> Stashed changes
  * Install OpenModelica packages (omc, OMSimulator)
  *
  * @param packages            (APT) packages to install.
