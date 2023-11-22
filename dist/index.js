@@ -271,9 +271,17 @@ function macInstallOM(version) {
     return __awaiter(this, void 0, void 0, function* () {
         // Download OpenModelica pkg file tmp/
         const pkg = yield util.downloadCachedSync(version.address, 'tmp', version.version === 'nightly');
+        // Check for homebrew
+        ///bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        //(echo; echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"') >> /home/arch/.bashrc
+        //eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         // Run installer
         core.info(`Running installer with package ${pkg}`);
-        yield exec.exec(`installer -pkg ${pkg} -target CurrentUserHomeDirectory`);
+        yield exec.exec(`installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`);
+        // Update PATH
+        const pathToOmc = '/opt/omc/bin';
+        core.info(`Adding ${pathToOmc} to PATH`);
+        core.addPath(pathToOmc);
         // Clean up
         fs.rmSync('tmp', { recursive: true });
     });

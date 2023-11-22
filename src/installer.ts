@@ -281,9 +281,19 @@ async function macInstallOM(version: VersionType): Promise<void> {
     version.version === 'nightly'
   )
 
+  // Check for homebrew
+  ///bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  //(echo; echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"') >> /home/arch/.bashrc
+  //eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
   // Run installer
   core.info(`Running installer with package ${pkg}`)
-  await exec.exec(`installer -pkg ${pkg} -target CurrentUserHomeDirectory`)
+  await exec.exec(`installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`)
+
+  // Update PATH
+  const pathToOmc = '/opt/omc/bin'
+  core.info(`Adding ${pathToOmc} to PATH`)
+  core.addPath(pathToOmc)
 
   // Clean up
   fs.rmSync('tmp', {recursive: true})

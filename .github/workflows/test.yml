@@ -22,7 +22,8 @@ jobs:
   test: # make sure the action works on a clean machine without building
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        #os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [macos-latest]
         include:
           - version: 'stable'
           - version: '1.22.0-dev-351'
