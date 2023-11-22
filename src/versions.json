@@ -262,25 +262,25 @@
       "version": "nightly",
       "type": "nightly",
       "arch": "arm64",
-      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-latest.pkg"
+      "address": "https://build.openmodelica.org/mac/arm64/nightly/OpenModelica-latest.pkg"
     },
     {
       "version": "1.22.0-dev-351",
       "type": "nightly",
       "arch": "arm64",
-      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.22.0-dev-351-g208d90052b-cmake-Darwin.pkg"
+      "address": "https://build.openmodelica.org/mac/arm64/nightly/OpenModelica-v1.22.0-dev-351-g208d90052b-cmake-Darwin.pkg"
     },
     {
       "version": "1.22.0-dev-44",
       "type": "nightly",
       "arch": "arm64",
-      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.22.0-dev-44-g01cf43c698-cmake-Darwin.pkg"
+      "address": "https://build.openmodelica.org/mac/arm64/nightly/OpenModelica-v1.22.0-dev-44-g01cf43c698-cmake-Darwin.pkg"
     },
     {
       "version": "1.21.0-dev-399",
       "type": "nightly",
       "arch": "arm64",
-      "address": "https://build.openmodelica.org/mac/pkg/arm64/nightly/OpenModelica-v1.21.0-dev-399-g0273588b39-cmake-Darwin.pkg"
+      "address": "https://build.openmodelica.org/mac/arm64/nightly/OpenModelica-v1.21.0-dev-399-g0273588b39-cmake-Darwin.pkg"
     }
   ]
 }
