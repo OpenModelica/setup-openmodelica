@@ -278,7 +278,7 @@ function macInstallOM(version) {
         // Run installer
         core.info(`Running installer with package ${pkg}`);
         yield exec.exec(`installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`);
-        const out = yield exec.getExecOutput('find', ['/', '-name="omc"']);
+        const out = yield exec.getExecOutput('find', ['/Users/runner', '-name', 'omc']);
         if (out.exitCode !== 0) {
             core.debug(`Error message: ${out.stderr}`);
             core.setFailed(Error(`Couldn't find omc. Exit code: ${out.exitCode}`));
