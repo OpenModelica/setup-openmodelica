@@ -292,7 +292,7 @@ async function macInstallOM(version: VersionType): Promise<void> {
     `installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`
   )
 
-  const out = await exec.getExecOutput('find', ['/', '-name "omc"'])
+  const out = await exec.getExecOutput('find', ['/', '-name="omc"'])
 
   if (out.exitCode !== 0) {
     core.debug(`Error message: ${out.stderr}`)
