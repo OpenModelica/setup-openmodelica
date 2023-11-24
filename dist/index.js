@@ -216,7 +216,7 @@ function aptInstallOM(packages, version, bit, useSudo) {
     ${version.address} ${distro} ${version.type} \
     ${'|'} ${sudo} tee /etc/apt/sources.list.d/openmodelica.list"`);
         // Install OpenModelica packages
-        core.info(`Running apt-get install`);
+        core.info(`Running apt-get inexec--versionstall`);
         yield exec.exec(`${sudo} apt-get clean`);
         yield exec.exec(`${sudo} apt-get update`);
         for (const pkg of packages) {
@@ -278,8 +278,13 @@ function macInstallOM(version) {
         // Run installer
         core.info(`Running installer with package ${pkg}`);
         yield exec.exec(`installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`);
+        const out = yield exec.getExecOutput('find', ['/', '-name "omc"']);
+        if (out.exitCode !== 0) {
+            core.debug(`Error message: ${out.stderr}`);
+            core.setFailed(Error(`Couldn't find omc. Exit code: ${out.exitCode}`));
+        }
         // Update PATH
-        const pathToOmc = '/opt/omc/bin';
+        const pathToOmc = '/Users/runner/opt/omc/bin';
         core.info(`Adding ${pathToOmc} to PATH`);
         core.addPath(pathToOmc);
         // Clean up

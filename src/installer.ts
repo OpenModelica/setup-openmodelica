@@ -206,7 +206,7 @@ async function aptInstallOM(
   )
 
   // Install OpenModelica packages
-  core.info(`Running apt-get install`)
+  core.info(`Running apt-get inexec--versionstall`)
   await exec.exec(`${sudo} apt-get clean`)
   await exec.exec(`${sudo} apt-get update`)
   for (const pkg of packages) {
@@ -288,10 +288,19 @@ async function macInstallOM(version: VersionType): Promise<void> {
 
   // Run installer
   core.info(`Running installer with package ${pkg}`)
-  await exec.exec(`installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`)
+  await exec.exec(
+    `installer -verbose -pkg ${pkg} -target CurrentUserHomeDirectory`
+  )
+
+  const out = await exec.getExecOutput('find', ['/', '-name "omc"'])
+
+  if (out.exitCode !== 0) {
+    core.debug(`Error message: ${out.stderr}`)
+    core.setFailed(Error(`Couldn't find omc. Exit code: ${out.exitCode}`))
+  }
 
   // Update PATH
-  const pathToOmc = '/opt/omc/bin'
+  const pathToOmc = '/Users/runner/opt/omc/bin'
   core.info(`Adding ${pathToOmc} to PATH`)
   core.addPath(pathToOmc)
 
