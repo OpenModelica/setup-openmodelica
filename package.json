@@ -1,6 +1,6 @@
 {
   "name": "setup-openmodelica",
-  "version": "0.7.1",
+  "version": "0.7.0",
   "engines": {
     "node": ">=20.0.0"
   },
