@@ -1,6 +1,7 @@
 name: 'Setup OpenModelica environment'
 description: 'Set up a OpenModelica environment and add it to the PATH'
 author: 'Andreas Heuermann'
+
 inputs:
   version:
     description: 'The OpenModelica version to use.
@@ -27,9 +28,11 @@ inputs:
     description: 'Install OpenModelica omc-diff tool.'
     required: false
     default: false
+
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
+
 branding:
   icon: 'download'
   color: 'blue'
