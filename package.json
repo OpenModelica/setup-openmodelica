@@ -34,7 +34,7 @@
     "@actions/tool-cache": "^2.0.1"
   },
   "devDependencies": {
-    "@types/node": "20.10.1",
+    "@types/node": "20.11.13",
     "@types/semver": "^7.5.5",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
