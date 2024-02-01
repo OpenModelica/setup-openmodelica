@@ -1,27 +1,30 @@
 # setup-openmodelica Action
 
-[![build-test](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/test.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/test.yml)
-[![Check dist/](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/check-dist.yml)
-[![CodeQL](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AnHeuermann/setup-openmodelica/actions/workflows/codeql-analysis.yml)
+[![build-test](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml/badge.svg)](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml)
+[![Check
+dist/](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg)](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml)
+[![CodeQL](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml)
 
-This action sets up the [OpenModelica Compiler](https://openmodelica.org/) `omc` for use in
-actions on Linux and Windows runners.
-On Linux apt is used to install OpenModelica, on Windows the installer executable is used.
+This action sets up the [OpenModelica Compiler](https://openmodelica.org/) `omc`
+for use in actions on Linux and Windows runners. On Linux apt is used to install
+OpenModelica, on Windows the installer executable is used.
+Afterwards the OpenModelica Package manager installs Modelica libraries.
 
 ## Usage
 
 ### Inputs
 
 - `version`: Version of OpenModelica to install.
-  - For example
-    `'nightly'`, `'stable'`, `'release'`, `'1.18'` or `'1.18.0'`.
-- `architecture`: Choose between 64 and 32 bit architecture.
-                  Can be `'64'` or `'32'`.
+  - For example `'nightly'`, `'stable'`, `'release'`, `'1.18'` or `'1.18.0'`.
+- `architecture`: Choose between 64 and 32 bit architecture. Can be `'64'` or
+                  `'32'`.
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
-  - For example `'omc'` for the OpenModelica Compiler or `'omsimulator'` for OMSimulator.
-    Use one package per line.
-- `libraries`: Modelica libraries to install with the [OpenModelica package manager](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html).
-  - One library per line with exact version number. Will install exact match only and all dependencies.
+  - For example `'omc'` for the OpenModelica Compiler or `'omsimulator'` for
+    OMSimulator. Use one package per line.
+- `libraries`: Modelica libraries to install with the [OpenModelica package
+  manager](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html).
+  - One library per line with exact version number. Will install exact match
+    only and all dependencies.
 
     ```yml
       libraries: |
@@ -36,6 +39,7 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | stable       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.22.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.22.0       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.21.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.20.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
@@ -68,16 +72,14 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 | all          | Windows | 32bit                     | ❌       |
 | all          | Mac     | all                       | ❌       |
 
-✔️: Available
-☑️: Available, but untested
-❌: Not available
+✔️: Available ☑️: Available, but untested ❌: Not available
 
 ## Examples
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.7
+- uses: OpenModelica/setup-openmodelica@v1.0
   with:
-    version: '1.22'
+    version: '1.22.1'
     packages: |
       'omc'
       'omsimulator'
@@ -88,29 +90,32 @@ On Linux apt is used to install OpenModelica, on Windows the installer executabl
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.7
+- uses: OpenModelica/setup-openmodelica@v1.0
   with:
     version: 'nightly'
 ```
 
 ```yaml
-- uses: AnHeuermann/setup-openmodelica@v0.7
+- uses: OpenModelica/setup-openmodelica@v1.0
   with:
     version: 'stable'
 ```
 
 ## Known Limitations
 
-- This action is very slow, especially on Windows, see [issue #36](https://github.com/AnHeuermann/setup-openmodelica/issues/36).
-- Macos runners are not supported, because OpenModelica discontinued the Mac builds after version 1.16.
-  It should be possible to build/install latest OpenModelica nightly for macOS,
-  see [this README](https://github.com/OpenModelica/OpenModelica/blob/master/README.cmake.md#33-macos).
-- OPENMODELICA home environment variable is only set on Windows. If you need it on Linux as well open an issue.
+- This action is very slow, especially on Windows, see [issue
+  #36](https://github.com/OpenModelica/setup-openmodelica/issues/36).
+- Macos runners are not supported, because OpenModelica discontinued the Mac
+  builds after version 1.16. It should be possible to build/install latest
+  OpenModelica nightly for macOS, see [this
+  README](https://github.com/OpenModelica/OpenModelica/blob/master/README.cmake.md#33-macos).
+- OPENMODELICA home environment variable is only set on Windows. If you need it
+  on Linux as well open an issue.
 
 ## Developing this action
 
-There is a dockerfile in [.ci/dockerfile](.ci/dockerfile) one can use for developing on Windows 10,
-so the installer won't mess with the host system.
+There is a dockerfile in [.ci/dockerfile](.ci/dockerfile) one can use for
+developing on Windows, so the installer won't mess with the host system.
 
 To build and test run:
 
@@ -123,14 +128,15 @@ $ npm test
 
 ## License
 
-This action is licensed under the MIT license, see [LICENSE.md](./LICENSE.md).
-OpenModelica and all OpenModelica tools are licensed under
-[GNU Affero General Public License version 3](https://www.gnu.org/licenses/agpl-3.0.en.html)
-or the 
-[OSMC (Open Source Modelica Consortium) Public License (OSMC-PL) version 1.8](https://openmodelica.org/osmc-pl/osmc-pl-1.8.txt).
+This action is licensed with the OSMC Public License v1.8, see
+[OSMC-License.md](./OSMC-License.md).
 
 ## Acknowledgments
 
-This package was developed as part of the [Proper Hybrid Models for Smarter Vehicles (PHyMoS)](https://phymos.de/en/) project,
-supported by the German [Federal Ministry for Economic Affairs and Climate Action](https://www.bmwk.de/Navigation/EN/Home/home.html)
-with project number 19|200022G.
+This package was initially developed by
+[Hochschule Bielefeld - University of Applied Sciences and Arts](hsbi.de)
+as part of the
+[Proper Hybrid Models for Smarter Vehicles (PHyMoS)](https://phymos.de/en/)
+project, supported by the German
+[Federal Ministry for Economic Affairs and Climate Action](https://www.bmwk.de/Navigation/EN/Home/home.html)
+with project number `19|200022G`.
