@@ -1,9 +1,8 @@
 # setup-openmodelica Action
 
-[![build-test](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml/badge.svg)](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml)
-[![Check
-dist/](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg)](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml)
-[![CodeQL](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml)
+[![build-test][build-test-badge]][build-test-link]
+[![Check dist/][check-dist-badge]][check-dist-link]
+[![CodeQL][codeql-badge]][codeql-link]
 
 This action sets up the [OpenModelica Compiler](https://openmodelica.org/) `omc`
 for use in actions on Linux and Windows runners. On Linux apt is used to install
@@ -21,8 +20,8 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
   - For example `'omc'` for the OpenModelica Compiler or `'omsimulator'` for
     OMSimulator. Use one package per line.
-- `libraries`: Modelica libraries to install with the [OpenModelica package
-  manager](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html).
+- `libraries`: Modelica libraries to install with the
+  [OpenModelica package manager][om-package-manager-link].
   - One library per line with exact version number. Will install exact match
     only and all dependencies.
 
@@ -103,27 +102,29 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 
 ## Known Limitations
 
-- This action is very slow, especially on Windows, see [issue
-  #36](https://github.com/OpenModelica/setup-openmodelica/issues/36).
+- This action is very slow on Windows.
 - Macos runners are not supported, because OpenModelica discontinued the Mac
   builds after version 1.16. It should be possible to build/install latest
-  OpenModelica nightly for macOS, see [this
-  README](https://github.com/OpenModelica/OpenModelica/blob/master/README.cmake.md#33-macos).
+  OpenModelica nightly for macOS, see [this README][macos-readme]:.
 - OPENMODELICA home environment variable is only set on Windows. If you need it
   on Linux as well open an issue.
 
 ## Developing this action
 
-There is a dockerfile in [.ci/dockerfile](.ci/dockerfile) one can use for
-developing on Windows, so the installer won't mess with the host system.
+The tests will install all sorts of OpenModelica versions and tools. To prevent
+the installer from messing with your host system use the provided dockerfile or
+dev-container:
+
+  - Linux: [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)
+  - Windows: [.ci/dockerfile](.ci/dockerfile)
 
 To build and test run:
 
 ```bash
-$ npm install
-$ npm run build
-$ npm run package
-$ npm test
+npm install
+npm run build
+npm run package
+npm test
 ```
 
 ## License
@@ -138,5 +139,15 @@ This package was initially developed by
 as part of the
 [Proper Hybrid Models for Smarter Vehicles (PHyMoS)](https://phymos.de/en/)
 project, supported by the German
-[Federal Ministry for Economic Affairs and Climate Action](https://www.bmwk.de/Navigation/EN/Home/home.html)
+[Federal Ministry for Economic Affairs and Climate Action][bmwk]
 with project number `19|200022G`.
+
+[build-test-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml/badge.svg "Build Badge"
+[build-test-link]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml
+[check-dist-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg "Check dist/ Badge"
+[check-dist-link]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml
+[codeql-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg "CodeQL Badge"
+[codeql-link]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml
+[om-package-manager-link]: https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html
+[bmwk]: https://www.bmwk.de/Navigation/EN/Home/home.html
+[macos-readme]: https://github.com/OpenModelica/OpenModelica/blob/master/README.cmake.md#33-macos
