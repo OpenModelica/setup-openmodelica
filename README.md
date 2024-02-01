@@ -76,7 +76,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 ## Examples
 
 ```yaml
-- uses: OpenModelica/setup-openmodelica@v1.0
+- uses: OpenModelica/setup-openmodelica@v1
   with:
     version: '1.22.1'
     packages: |
@@ -89,13 +89,13 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 ```
 
 ```yaml
-- uses: OpenModelica/setup-openmodelica@v1.0
+- uses: OpenModelica/setup-openmodelica@v1
   with:
     version: 'nightly'
 ```
 
 ```yaml
-- uses: OpenModelica/setup-openmodelica@v1.0
+- uses: OpenModelica/setup-openmodelica@v1
   with:
     version: 'stable'
 ```
