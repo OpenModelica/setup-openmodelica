@@ -47,7 +47,7 @@
     "prettier": "^3.2.4",
     "semver": "^7.5.4",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.3"
   },
   "bugs": {
     "url": "https://github.com/OpenModelica/setup-openmodelica/issues"
