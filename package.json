@@ -1,7 +1,7 @@
 {
   "name": "setup-openmodelica",
   "description": "Setup OpenModelica Compiler omc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Andreas Heuermann",
   "license": "OSMC-PL-1-8",
   "engines": {
