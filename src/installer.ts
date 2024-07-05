@@ -323,7 +323,7 @@ export async function installLibs(librariesInput: string[]): Promise<void> {
 
   // Run install script
   core.info(`Running install script ${filename}`)
-  await exec.exec(`omc ${filename}`)
+  await exec.exec(`omc`, [filename])
 
   // Clean up
   fs.rmSync(filename)
