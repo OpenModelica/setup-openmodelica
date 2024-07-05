@@ -95,7 +95,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.23.0~dev-')
+      expect(resVer).toContain('1.24.0~dev-')
     },
     10 * 60000
   )
@@ -107,7 +107,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.22.')
+      expect(resVer).toContain('1.23.')
     },
     10 * 60000
   )
@@ -119,7 +119,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('release')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.22.')
+      expect(resVer).toContain('1.23.')
     },
     10 * 60000
   )
@@ -144,7 +144,7 @@ function linuxTests(): void {
       const packages = ['omc', 'omsimulator']
       await installer.installOM(packages, version, '64')
       const resVer = await installer.showVersion('OMSimulator')
-      expect(resVer).toContain('2.1.1')
+      expect(resVer).toContain('2.1.2')
     },
     10 * 60000
   )
