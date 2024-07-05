@@ -310,7 +310,7 @@ function installLibs(librariesInput) {
         const filename = genInstallScript(librariesInput);
         // Run install script
         core.info(`Running install script ${filename}`);
-        yield exec.exec(`omc ${filename}`);
+        yield exec.exec(`omc`, [filename]);
         // Clean up
         fs.rmSync(filename);
     });
