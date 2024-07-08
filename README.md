@@ -14,7 +14,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 ### Inputs
 
 - `version`: Version of OpenModelica to install.
-  - For example `'nightly'`, `'stable'`, `'release'`, `'1.18'` or `'1.18.0'`.
+  - For example `'nightly'`, `'stable'`, `'release'`, `'1.23'` or `'1.23.0'`.
 - `architecture`: Choose between 64 and 32 bit architecture. Can be `'64'` or
                   `'32'`.
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
@@ -38,6 +38,9 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | stable       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.23.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.23.0       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.22.4       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.22.3       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.22.2       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.22.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
@@ -62,6 +65,11 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | nightly      | Windows | 64bit                     | ✔️       |
 | stable       | Windows | 64bit                     | ✔️       |
 | release      | Windows | 64bit                     | ✔️       |
+| 1.23.1       | Windows | 64bit                     | ✔️       |
+| 1.23.0       | Windows | 64bit                     | ✔️       |
+| 1.22.3       | Windows | 64bit                     | ✔️       |
+| 1.22.2       | Windows | 64bit                     | ✔️       |
+| 1.22.1       | Windows | 64bit                     | ✔️       |
 | 1.22.0       | Windows | 64bit                     | ✔️       |
 | 1.21.0       | Windows | 64bit                     | ✔️       |
 | 1.20.0       | Windows | 64bit                     | ✔️       |
@@ -80,7 +88,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 ```yaml
 - uses: OpenModelica/setup-openmodelica@v1.0
   with:
-    version: '1.22.1'
+    version: '1.23.1'
     packages: |
       'omc'
       'omsimulator'
