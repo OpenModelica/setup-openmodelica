@@ -10,13 +10,19 @@
       "version": "stable",
       "type": "stable",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.23/1/64bit/OpenModelica-v1.23.1-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.24/5/64bit/OpenModelica-v1.24.5-64bit.exe"
     },
     {
       "version": "release",
       "type": "release",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.23/1/64bit/OpenModelica-v1.23.1-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.24/5/64bit/OpenModelica-v1.24.5-64bit.exe"
+    },
+    {
+      "version": "1.24.5",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.24/5/64bit/OpenModelica-v1.24.5-64bit.exe"
     },
     {
       "version": "1.23.1",
@@ -117,6 +123,12 @@
       "version": "1",
       "type": "stable",
       "address": "https://build.openmodelica.org/apt"
+    },
+    {
+      "version": "1.24.5",
+      "aptname": "1.24.5-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.24.5/"
     },
     {
       "version": "1.23.1",
