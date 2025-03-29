@@ -64,25 +64,25 @@ function linuxTests(): void {
   })
 
   test(
-    'Install 64 bit OpenModelica release 1.22.3',
+    'Install 64 bit OpenModelica release 1.23.1',
     async () => {
       await purgeOMC()
-      const version = installer.getOMVersion('1.22.3')
+      const version = installer.getOMVersion('1.23.1')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toEqual('1.22.3')
+      expect(resVer).toEqual('1.23.1')
     },
     10 * 60000
   )
 
   test(
-    'Try to install 64 bit OpenModelica release 1.18.0 which is not available on jammy',
+    'Try to install 64 bit OpenModelica release 1.22.3 which is not available on noble',
     async () => {
       await purgeOMC()
-      const version = installer.getOMVersion('1.18.0')
-      expect(version.version).toEqual('1.18.0')
+      const version = installer.getOMVersion('1.22.3')
+      expect(version.version).toEqual('1.22.3')
       await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow(
-        'Distribution jammy not available for OpenModelica version 1.18.0.'
+        'Distribution noble not available for OpenModelica version 1.22.3.'
       )
     },
     10 * 60000
