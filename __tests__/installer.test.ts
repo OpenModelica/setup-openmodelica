@@ -42,7 +42,7 @@ function linuxTests(): void {
     let outVer: installer.VersionType
 
     outVer = installer.getOMVersion('1')
-    expect(outVer.version).toEqual('1.23.1')
+    expect(outVer.version).toEqual('1.24.5')
 
     outVer = installer.getOMVersion('1.18')
     expect(outVer.version).toEqual('1.18.1')
@@ -64,25 +64,25 @@ function linuxTests(): void {
   })
 
   test(
-    'Install 64 bit OpenModelica release 1.22.3',
+    'Install 64 bit OpenModelica release 1.24.3',
     async () => {
       await purgeOMC()
-      const version = installer.getOMVersion('1.22.3')
+      const version = installer.getOMVersion('1.24.3')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toEqual('1.22.3')
+      expect(resVer).toEqual('1.24.3')
     },
     10 * 60000
   )
 
   test(
-    'Try to install 64 bit OpenModelica release 1.18.0 which is not available on jammy',
+    'Try to install 64 bit OpenModelica release 1.22.3 which is not available on noble',
     async () => {
       await purgeOMC()
-      const version = installer.getOMVersion('1.18.0')
-      expect(version.version).toEqual('1.18.0')
+      const version = installer.getOMVersion('1.22.3')
+      expect(version.version).toEqual('1.22.3')
       await expect(installer.installOM(['omc'], version, '64')).rejects.toThrow(
-        'Distribution jammy not available for OpenModelica version 1.18.0.'
+        'Distribution noble not available for OpenModelica version 1.22.3.'
       )
     },
     10 * 60000
@@ -95,7 +95,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.24.0~dev-')
+      expect(resVer).toContain('1.26.0~dev-')
     },
     10 * 60000
   )
@@ -107,7 +107,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.23.')
+      expect(resVer).toContain('1.25.')
     },
     10 * 60000
   )
@@ -119,19 +119,19 @@ function linuxTests(): void {
       const version = installer.getOMVersion('release')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.23.')
+      expect(resVer).toContain('1.24.')
     },
     10 * 60000
   )
 
   test(
-    'Install 64 bit OpenModelica 1.19',
+    'Install 64 bit OpenModelica 1.24',
     async () => {
       await purgeOMC()
-      const version = installer.getOMVersion('1.19')
+      const version = installer.getOMVersion('1.24')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.19.2')
+      expect(resVer).toContain('1.24.5')
     },
     10 * 60000
   )

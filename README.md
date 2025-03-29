@@ -14,7 +14,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 ### Inputs
 
 - `version`: Version of OpenModelica to install.
-  - For example `'nightly'`, `'stable'`, `'release'`, `'1.23'` or `'1.23.0'`.
+  - For example `'nightly'`, `'stable'`, `'release'`, `'1.24'` or `'1.24.5'`.
 - `architecture`: Choose between 64 and 32 bit architecture. Can be `'64'` or
                   `'32'`.
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
@@ -28,16 +28,19 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
     ```yml
       libraries: |
         'Modelica 4.0.0'
-        'Modelica 3.2.3'
+        'Modelica 3.2.3+maint.om'
     ```
 
 ## Available OpenModelica versions
+
+### Linux
 
 | Version      | OS      | Arch                      | Available |
 |--------------|---------|---------------------------|-----------|
 | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | stable       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.24.5       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.23.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.23.0       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.22.4       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
@@ -62,9 +65,17 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | 1.14.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.14.1       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
 | 1.13.2       | Linux   | amd64, arm64, armhf, i386 | ☑️       |
+
+✔️: Available ☑️: Available, but untested ❌: Not available
+
+## Windows
+
+| Version      | OS      | Arch                      | Available |
+|--------------|---------|---------------------------|-----------|
 | nightly      | Windows | 64bit                     | ✔️       |
 | stable       | Windows | 64bit                     | ✔️       |
 | release      | Windows | 64bit                     | ✔️       |
+| 1.24.5       | Windows | 64bit                     | ✔️       |
 | 1.23.1       | Windows | 64bit                     | ✔️       |
 | 1.23.0       | Windows | 64bit                     | ✔️       |
 | 1.22.3       | Windows | 64bit                     | ✔️       |
@@ -79,16 +90,19 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | 1.18.0       | Windows | 64bit                     | ☑️       |
 | 1.17.0       | Windows | 64bit                     | ☑️       |
 | all          | Windows | 32bit                     | ❌       |
-| all          | Mac     | all                       | ❌       |
 
 ✔️: Available ☑️: Available, but untested ❌: Not available
+
+## Mac
+
+Not available.
 
 ## Examples
 
 ```yaml
 - uses: OpenModelica/setup-openmodelica@v1.0
   with:
-    version: '1.23.1'
+    version: '1.24.5'
     packages: |
       'omc'
       'omsimulator'
