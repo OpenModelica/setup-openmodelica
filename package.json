@@ -37,10 +37,10 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
     "@stylistic/eslint-plugin": "^4.2.0",
-    "@types/node": "^22.13.14",
+    "@types/node": "^22.13.17",
     "@types/semver": "^7.7.0",
-    "@typescript-eslint/eslint-plugin": "^8.28.0",
-    "@typescript-eslint/parser": "^8.28.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
     "@vercel/ncc": "^0.38.3",
     "eslint": "^9.23.0",
     "eslint-plugin-github": "^6.0.0",
@@ -52,7 +52,7 @@
     "npm-check-updates": "^17.1.16",
     "prettier": "^3.5.3",
     "semver": "^7.7.1",
-    "ts-jest": "^29.3.0",
+    "ts-jest": "^29.3.1",
     "typescript": "^5.8.2"
   },
   "bugs": {
