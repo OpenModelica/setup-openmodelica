@@ -19,6 +19,8 @@ on:
     branches: [ main ]
   schedule:
     - cron: '31 7 * * 3'
+  repository_dispatch:
+    types: [dependabot-dist-updated]
 
 jobs:
   analyze:

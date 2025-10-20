@@ -15,7 +15,8 @@ on:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
-
+  repository_dispatch:
+    types: [dependabot-dist-updated]
 jobs:
   check-dist:
     runs-on: ubuntu-latest
