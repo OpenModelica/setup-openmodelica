@@ -29,7 +29,9 @@ jobs:
         run: npm ci
 
       - name: Build package
-        run: npm run package
+        run: |
+          npm run build
+          npm run package
 
       - name: Commit dist changes
         run: |
