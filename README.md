@@ -138,7 +138,8 @@ Not available.
 
 ## Known Limitations
 
-This action is very slow, especially on Windows, see issue [#36][issue-36-link].
+This action can be slow, especially on Windows, see issue [#36][issue-36-link].
+
 - Macos runners are not supported, because OpenModelica discontinued the Mac
   builds after version 1.16. It should be possible to build/install latest
   OpenModelica nightly for macOS, see [this README][macos-readme]:.
@@ -151,8 +152,8 @@ The tests will install all sorts of OpenModelica versions and tools. To prevent
 the installer from messing with your host system use the provided dockerfile or
 dev-container:
 
-  - Linux: [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)
-  - Windows: [.ci/dockerfile](.ci/dockerfile)
+- Linux: [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)
+- Windows: [.ci/dockerfile](.ci/dockerfile)
 
 To build and test run:
 
