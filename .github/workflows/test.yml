@@ -5,6 +5,8 @@ on: # rebuild any PRs and main branch changes
     branches:
       - main
       - 'releases/*'
+  repository_dispatch:
+    types: [dependabot-dist-updated]
 
 jobs:
   build: # make sure build/ci work properly
@@ -27,6 +29,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.event.client_payload.pr }}
       - uses: ./
         with:
           version: ${{ matrix.version }}

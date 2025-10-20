@@ -15,13 +15,16 @@ on:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
-
+  repository_dispatch:
+    types: [dependabot-dist-updated]
 jobs:
   check-dist:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.event.client_payload.pr }}
 
       - name: Set Node.js 20.x
         uses: actions/setup-node@v4
