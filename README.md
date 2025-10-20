@@ -40,6 +40,8 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | stable       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | release      | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.25.5       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
+| 1.25.4       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.25.3       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.25.2       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
 | 1.25.1       | Linux   | amd64, arm64, armhf, i386 | ✔️       |
@@ -79,6 +81,8 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | nightly      | Windows | 64bit                     | ✔️       |
 | stable       | Windows | 64bit                     | ✔️       |
 | release      | Windows | 64bit                     | ✔️       |
+| 1.25.5       | Windows | 64bit                     | ✔️       |
+| 1.25.4       | Windows | 64bit                     | ✔️       |
 | 1.25.3       | Windows | 64bit                     | ✔️       |
 | 1.25.2       | Windows | 64bit                     | ✔️       |
 | 1.25.1       | Windows | 64bit                     | ✔️       |
@@ -110,7 +114,7 @@ Not available.
 ```yaml
 - uses: OpenModelica/setup-openmodelica@v1.0
   with:
-    version: '1.25.3'
+    version: '1.25.5'
     packages: |
       'omc'
       'omsimulator'
