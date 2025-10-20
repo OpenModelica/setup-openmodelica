@@ -1,7 +1,6 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import jest from "eslint-plugin-jest";
 import stylistic from "@stylistic/eslint-plugin";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
 import path from "node:path";
@@ -22,7 +21,6 @@ export default defineConfig([
         plugins: {
             jest,
             stylistic,
-            "@typescript-eslint": typescriptEslint,
         },
 
         languageOptions: {
