@@ -12,7 +12,7 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set Node.js 20.x
         uses: actions/setup-node@v6
         with:
@@ -28,7 +28,7 @@ jobs:
         version: [stable, '1.25']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref || github.event.client_payload.pr }}
       - uses: ./
