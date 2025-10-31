@@ -520,7 +520,7 @@ function run() {
                 }
             }
             // Install Modelica libraries
-            if (librariesInput) {
+            if (librariesInput && librariesInput.length > 0) {
                 yield installer.installLibs(librariesInput);
             }
             // Install omc-diff
