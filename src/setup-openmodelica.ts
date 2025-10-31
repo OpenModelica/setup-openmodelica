@@ -88,7 +88,7 @@ export async function run(): Promise<void> {
     }
 
     // Install Modelica libraries
-    if (librariesInput) {
+    if (librariesInput && librariesInput.length > 0) {
       await installer.installLibs(librariesInput)
     }
 
