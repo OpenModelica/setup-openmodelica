@@ -3,7 +3,7 @@ import * as exec from '@actions/exec'
 
 import * as fs from 'fs'
 import * as os from 'os'
-import { jest, expect, test } from '@jest/globals'
+import { expect, test } from '@jest/globals'
 
 const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 
@@ -137,18 +137,27 @@ function linuxTests(): void {
   )
 
   test(
-    'Install Modelica library',
+    'Install Modelica libraries',
     async () => {
-      const libraries = ['Modelica', 'NeuralNetwork']
+      let output = ''
+      const originalWrite = process.stdout.write
 
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { })
-      installer.installLibs(libraries)
-      const allLogs = logSpy.mock.calls.flat().join('\n')
+      // Redirect stdout
+      process.stdout.write = ((chunk: any) => {
+        output += chunk
+        return true
+      }) as any
 
-      expect(allLogs).toContain('Installed: Modelica')
-      expect(allLogs).toContain('Installed: NeuralNetwork')
+      try {
+        const libraries = ['Modelica 4.0.0', 'NeuralNetwork']
+        await installer.installLibs(libraries)
 
-      logSpy.mockRestore()
+        expect(output).toContain('Installed: Modelica 4.0.0')
+        expect(output).toContain('Installed: NeuralNetwork')
+      } finally {
+        // Restore original stdout
+        process.stdout.write = originalWrite
+      }
     },
     10 * 60000
   )
@@ -191,18 +200,27 @@ function windowsTests(): void {
   )
 
   test(
-    'Install Modelica library',
+    'Install Modelica libraries',
     async () => {
-      const libraries = ['Modelica', 'NeuralNetwork']
+      let output = ''
+      const originalWrite = process.stdout.write
 
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { })
-      installer.installLibs(libraries)
-      const allLogs = logSpy.mock.calls.flat().join('\n')
+      // Redirect stdout
+      process.stdout.write = ((chunk: any) => {
+        output += chunk
+        return true
+      }) as any
 
-      expect(allLogs).toContain('Installed: Modelica')
-      expect(allLogs).toContain('Installed: NeuralNetwork')
+      try {
+        const libraries = ['Modelica 4.0.0', 'NeuralNetwork']
+        await installer.installLibs(libraries)
 
-      logSpy.mockRestore()
+        expect(output).toContain('Installed: Modelica 4.0.0')
+        expect(output).toContain('Installed: NeuralNetwork')
+      } finally {
+        // Restore original stdout
+        process.stdout.write = originalWrite
+      }
     },
     10 * 60000
   )
