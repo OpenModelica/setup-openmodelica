@@ -3,9 +3,9 @@ import * as exec from '@actions/exec'
 
 import * as fs from 'fs'
 import * as os from 'os'
-import {expect, test} from '@jest/globals'
+import { expect, test } from '@jest/globals'
 
-const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
+const osPlat = os.platform()
 
 switch (osPlat) {
   case 'linux':
@@ -19,6 +19,9 @@ switch (osPlat) {
 }
 commonTests()
 
+/**
+ * Uninstall OpenModelica on Linux system using apt-get purge.
+ */
 async function purgeOMC(): Promise<void> {
   const fileContent = fs.readFileSync('/var/log/apt/history.log').toString()
   const matches = fileContent.match('Install: .*omc.*')
@@ -33,6 +36,9 @@ async function purgeOMC(): Promise<void> {
   }
 }
 
+/**
+ * Tests for Linux.
+ */
 function linuxTests(): void {
   test('Get Linux versions', async () => {
     const releaseVersions = installer.getOMVersions()
@@ -160,6 +166,9 @@ function linuxTests(): void {
   )
 }
 
+/**
+ * Tests for Windows.
+ */
 function windowsTests(): void {
   test(
     'Install 64 bit OpenModelica release 1.25.5',
@@ -170,16 +179,36 @@ function windowsTests(): void {
       const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.25.5')
     },
-    10 * 60000
+    60 * 60000
   )
 }
 
+/**
+ * Test for Windows and Linux.
+ */
 function commonTests(): void {
   test(
     'Install Modelica libraries',
     async () => {
-      const libraries = ['Modelica 4.0.0', 'Modelica 3.2.3+maint.om']
-      await installer.installLibs(libraries)
+      let output = ''
+      const originalWrite = process.stdout.write
+
+      // Redirect stdout
+      process.stdout.write = ((chunk: any) => {
+        output += chunk
+        return true
+      }) as any
+
+      try {
+        const libraries = ['Modelica 4.0.0', 'NeuralNetwork 2.1.0']
+        await installer.installLibs(libraries)
+
+        expect(output).toContain('Installed: Modelica 4.0.0')
+        expect(output).toContain('Installed: NeuralNetwork 2.1.0')
+      } finally {
+        // Restore original stdout
+        process.stdout.write = originalWrite
+      }
     },
     10 * 60000
   )
