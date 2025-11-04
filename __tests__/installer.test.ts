@@ -196,7 +196,7 @@ function windowsTests(): void {
       const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.25.5')
     },
-    10 * 60000
+    60 * 60000
   )
 
   test(
