@@ -3,7 +3,7 @@ import * as exec from '@actions/exec'
 
 import * as fs from 'fs'
 import * as os from 'os'
-import {expect, test} from '@jest/globals'
+import { jest, expect, test } from '@jest/globals'
 
 const osPlat = os.platform() // possible values: win32 (Windows), linux (Linux), darwin (macOS)
 
@@ -137,6 +137,23 @@ function linuxTests(): void {
   )
 
   test(
+    'Install Modelica library',
+    async () => {
+      const libraries = ['Modelica', 'NeuralNetwork']
+
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { })
+      installer.installLibs(libraries)
+      const allLogs = logSpy.mock.calls.flat().join('\n')
+
+      expect(allLogs).toContain('Installed: Modelica')
+      expect(allLogs).toContain('Installed: NeuralNetwork')
+
+      logSpy.mockRestore()
+    },
+    10 * 60000
+  )
+
+  test(
     'Install OMSimulator',
     async () => {
       await purgeOMC()
@@ -169,6 +186,23 @@ function windowsTests(): void {
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
       expect(resVer).toContain('1.25.5')
+    },
+    10 * 60000
+  )
+
+  test(
+    'Install Modelica library',
+    async () => {
+      const libraries = ['Modelica', 'NeuralNetwork']
+
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { })
+      installer.installLibs(libraries)
+      const allLogs = logSpy.mock.calls.flat().join('\n')
+
+      expect(allLogs).toContain('Installed: Modelica')
+      expect(allLogs).toContain('Installed: NeuralNetwork')
+
+      logSpy.mockRestore()
     },
     10 * 60000
   )
