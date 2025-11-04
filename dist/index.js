@@ -272,7 +272,7 @@ function winInstallOM(version, bit) {
         core.addPath(pathToOmc);
         core.exportVariable('OPENMODELICAHOME', path.join('C:\\Program Files\\', openmodelicahome[0]));
         // Clean up
-        fs.rmSync('tmp', { recursive: true });
+        fs.rmSync('tmp', { recursive: true, force: true, maxRetries: 10 });
     });
 }
 /**

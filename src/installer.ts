@@ -267,7 +267,7 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   )
 
   // Clean up
-  fs.rmSync('tmp', {recursive: true})
+  fs.rmSync('tmp', { recursive: true, force: true, maxRetries: 10 })
 }
 
 /**
