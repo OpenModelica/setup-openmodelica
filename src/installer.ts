@@ -36,7 +36,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
-import { cwd } from 'process'
+import {cwd} from 'process'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
