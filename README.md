@@ -43,7 +43,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | 1.26.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
 | 1.26.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
 | 1.25.7       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.6       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.6       | Linux   | amd64, arm64, armhf, i386 | ❌        |
 | 1.25.5       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
 | 1.25.4       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
 | 1.25.3       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
@@ -88,7 +88,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | 1.26.1       | Windows | 64bit                     | ✔️        |
 | 1.26.0       | Windows | 64bit                     | ✔️        |
 | 1.25.7       | Windows | 64bit                     | ✔️        |
-| 1.25.6       | Windows | 64bit                     | ✔️        |
+| 1.25.6       | Windows | 64bit                     | ❌        |
 | 1.25.5       | Windows | 64bit                     | ✔️        |
 | 1.25.4       | Windows | 64bit                     | ✔️        |
 | 1.25.3       | Windows | 64bit                     | ✔️        |
