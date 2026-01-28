@@ -31,10 +31,10 @@
       "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/0/64bit/OpenModelica-v1.26.0-64bit.exe"
     },
     {
-      "version": "1.25.6",
+      "version": "1.25.7",
       "type": "release",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.25/7/64bit/OpenModelica-v1.25.6-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.25/7/64bit/OpenModelica-v1.25.7-64bit.exe"
     },
     {
       "version": "1.25.6",
