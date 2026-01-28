@@ -10,13 +10,31 @@
       "version": "stable",
       "type": "stable",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.25/5/64bit/OpenModelica-v1.25.5-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/1/64bit/OpenModelica-v1.26.1-64bit.exe"
     },
     {
       "version": "release",
       "type": "release",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.25/5/64bit/OpenModelica-v1.25.5-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/1/64bit/OpenModelica-v1.26.1-64bit.exe"
+    },
+    {
+      "version": "1.26.1",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/1/64bit/OpenModelica-v1.26.1-64bit.exe"
+    },
+    {
+      "version": "1.26.0",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/0/64bit/OpenModelica-v1.26.0-64bit.exe"
+    },
+    {
+      "version": "1.25.7",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.25/7/64bit/OpenModelica-v1.25.7-64bit.exe"
     },
     {
       "version": "1.25.5",
@@ -189,6 +207,24 @@
       "version": "1",
       "type": "stable",
       "address": "https://build.openmodelica.org/apt"
+    },
+    {
+      "version": "1.26.1",
+      "aptname": "1.26.1-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.1/"
+    },
+    {
+      "version": "1.26.0",
+      "aptname": "1.26.0-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.0/"
+    },
+    {
+      "version": "1.25.7",
+      "aptname": "1.26.0-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.25.7/"
     },
     {
       "version": "1.25.5",
