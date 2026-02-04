@@ -1,9 +1,9 @@
-import * as installer from '../src/installer'
+import * as installer from '../src/installer.js'
 import * as exec from '@actions/exec'
 
 import * as fs from 'fs'
 import * as os from 'os'
-import { expect, test } from '@jest/globals'
+import {expect, test} from '@jest/globals'
 
 const osPlat = os.platform()
 

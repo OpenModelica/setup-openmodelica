@@ -42,6 +42,7 @@ export default defineConfig([
             "i18n-text/no-en": "off",
             "eslint-comments/no-use": "off",
             "import/no-namespace": "off",
+            "import/no-unresolved": "off",
             "no-unused-vars": "off",
             "func-call-spacing": ["error", "never"],
             "semi": ["error", "never"],

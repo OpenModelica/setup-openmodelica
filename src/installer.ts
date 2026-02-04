@@ -41,8 +41,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import * as semver from 'semver'
-import * as util from './util'
-import json from './versions.json'
+import * as util from './util.js'
+import json from './versions.json' with {type: 'json'}
 
 export type VersionType = {
   version: string
@@ -267,7 +267,7 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
   )
 
   // Clean up
-  fs.rmSync('tmp', { recursive: true, force: true, maxRetries: 10 })
+  fs.rmSync('tmp', {recursive: true, force: true, maxRetries: 10})
 }
 
 /**
