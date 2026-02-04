@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@v6
@@ -40,7 +43,7 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "Update dist after Dependabot update"
-            git push
+            git push origin HEAD:${{ github.head_ref }}
           fi
 
       - name: Trigger test workflow
