@@ -35,7 +35,7 @@
 
 import * as core from '@actions/core'
 
-import * as installer from './installer'
+import * as installer from './installer.js'
 
 export async function run(): Promise<void> {
   try {
