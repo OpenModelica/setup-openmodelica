@@ -48,7 +48,7 @@ function linuxTests(): void {
     let outVer: installer.VersionType
 
     outVer = installer.getOMVersion('1')
-    expect(outVer.version).toEqual('1.26.1')
+    expect(outVer.version).toEqual('1.26.3')
 
     outVer = installer.getOMVersion('1.18')
     expect(outVer.version).toEqual('1.18.1')
@@ -70,13 +70,13 @@ function linuxTests(): void {
   })
 
   test(
-    'Install 64 bit OpenModelica release 1.26.1',
+    'Install 64 bit OpenModelica release 1.26.3',
     async () => {
       await purgeOMC()
-      const version = installer.getOMVersion('1.26.1')
+      const version = installer.getOMVersion('1.26.3')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toEqual('1.26.1')
+      expect(resVer).toEqual('1.26.3')
     },
     10 * 60000
   )
@@ -171,13 +171,13 @@ function linuxTests(): void {
  */
 function windowsTests(): void {
   test(
-    'Install 64 bit OpenModelica release 1.26.1',
+    'Install 64 bit OpenModelica release 1.26.3',
     async () => {
-      const version = installer.getOMVersion('1.26.1')
-      expect(version.version).toEqual('1.26.1')
+      const version = installer.getOMVersion('1.26.3')
+      expect(version.version).toEqual('1.26.3')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.26.1')
+      expect(resVer).toContain('1.26.3')
     },
     60 * 60000
   )
