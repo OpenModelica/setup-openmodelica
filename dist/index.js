@@ -75343,11 +75343,8 @@ async function aptInstallOM(packages, version, bit, useSudo) {
  * @param bit           String specifying 32 or 64 bit version.
  */
 async function winInstallOM(version, bit) {
-    // Download OpenModelica installer to RUNNER_TEMP to avoid workspace cleanup issues on Windows.
-    // RUNNER_TEMP is automatically cleaned up by the runner after the job completes.
-    const runnerTemp = process.env['RUNNER_TEMP'] ?? os.tmpdir();
-    const tmpDir = path.join(runnerTemp, 'setup-openmodelica');
-    const installer = await downloadCachedSync(version.address, tmpDir, version.version === 'nightly');
+    // Download OpenModelica installer to tmp/
+    const installer = await downloadCachedSync(version.address, 'tmp', version.version === 'nightly');
     if (bit !== version.arch) {
         throw new Error(`Architecture doesn't match architecture of version.`);
     }
@@ -75365,12 +75362,13 @@ async function winInstallOM(version, bit) {
     info(`Adding ${pathToOmc} to PATH`);
     addPath(pathToOmc);
     exportVariable('OPENMODELICAHOME', path.join('C:\\Program Files\\', openmodelicahome[0]));
-    // Clean up. RUNNER_TEMP is automatically cleaned after the job, so failures are non-fatal.
+    // Clean up. Failures are non-fatal: Windows may briefly lock the installer file
+    // after execution (e.g. antivirus scan), so we warn rather than fail the action.
     try {
-        fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 10 });
+        fs.rmSync('tmp', { recursive: true, force: true, maxRetries: 10 });
     }
     catch (err) {
-        warning(`Failed to remove installer temp directory ${tmpDir}: ${err}`);
+        warning(`Failed to remove installer temp directory: ${err}`);
     }
 }
 /**
