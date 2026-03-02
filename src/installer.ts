@@ -266,8 +266,13 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
     path.join('C:\\Program Files\\', openmodelicahome[0])
   )
 
-  // Clean up
-  fs.rmSync('tmp', {recursive: true, force: true, maxRetries: 10})
+  // Clean up. Failures are non-fatal: Windows may briefly lock the installer file
+  // after execution (e.g. antivirus scan), so we warn rather than fail the action.
+  try {
+    fs.rmSync('tmp', {recursive: true, force: true, maxRetries: 10})
+  } catch (err) {
+    core.warning(`Failed to remove installer temp directory: ${err}`)
+  }
 }
 
 /**

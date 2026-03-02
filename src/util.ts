@@ -71,6 +71,12 @@ function showProgress(
 async function getDownloadPromise(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest)
+    // Guard flag: once the file's 'finish' event fires we must not delete the
+    // file in any subsequent error handler.  Node.js can emit a delayed 'error'
+    // on the write stream after 'finish' due to pipe auto-destroy teardown,
+    // which would otherwise unlink the completed file before the cache layer
+    // has a chance to stat it.
+    let finished = false
     https.get(url, response => {
       const header = response.headers['content-length']
       const len = header ? parseInt(header, 10) : 0
@@ -100,19 +106,24 @@ async function getDownloadPromise(url: string, dest: string): Promise<void> {
       })
 
       response.on('error', err => {
-        file.close()
-        fs.unlink(dest, () => {}) // Delete temp file
-        reject(err.message)
+        if (!finished) {
+          file.close()
+          fs.unlink(dest, () => {}) // Delete temp file
+          reject(err.message)
+        }
       })
 
       file.on('finish', () => {
+        finished = true
         resolve()
       })
 
       file.on('error', err => {
-        file.close()
-        fs.unlink(dest, () => {}) // Delete temp file
-        reject(err.message)
+        if (!finished) {
+          file.close()
+          fs.unlink(dest, () => {}) // Delete temp file
+          reject(err.message)
+        }
       })
     })
   })
@@ -157,9 +168,13 @@ export async function downloadCachedSync(
     const cacheKey = await cache.restoreCache([installPath], url)
     if (cacheKey === undefined) {
       await downloadSync(url, installPath)
-      const cachedId = await cache.saveCache([installPath], url)
-      if (cachedId !== -1) {
-        core.debug(`Installer ${installer} saved with key: ${installPath}`)
+      try {
+        const cachedId = await cache.saveCache([installPath], url)
+        if (cachedId !== -1) {
+          core.debug(`Installer ${installer} saved with key: ${installPath}`)
+        }
+      } catch (err) {
+        core.warning(`Failed to save installer to cache: ${err}`)
       }
     } else {
       core.info(`Using cached installer for ${url}`)
