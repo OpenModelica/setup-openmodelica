@@ -234,10 +234,13 @@ async function aptInstallOM(
  * @param bit           String specifying 32 or 64 bit version.
  */
 async function winInstallOM(version: VersionType, bit: string): Promise<void> {
-  // Download OpenModelica installer to tmp/
+  // Download OpenModelica installer to RUNNER_TEMP to avoid workspace cleanup issues on Windows.
+  // RUNNER_TEMP is automatically cleaned up by the runner after the job completes.
+  const runnerTemp = process.env['RUNNER_TEMP'] ?? os.tmpdir()
+  const tmpDir = path.join(runnerTemp, 'setup-openmodelica')
   const installer = await util.downloadCachedSync(
     version.address,
-    'tmp',
+    tmpDir,
     version.version === 'nightly'
   )
 
@@ -266,8 +269,12 @@ async function winInstallOM(version: VersionType, bit: string): Promise<void> {
     path.join('C:\\Program Files\\', openmodelicahome[0])
   )
 
-  // Clean up
-  fs.rmSync('tmp', {recursive: true, force: true, maxRetries: 10})
+  // Clean up. RUNNER_TEMP is automatically cleaned after the job, so failures are non-fatal.
+  try {
+    fs.rmSync(tmpDir, {recursive: true, force: true, maxRetries: 10})
+  } catch (err) {
+    core.warning(`Failed to remove installer temp directory ${tmpDir}: ${err}`)
+  }
 }
 
 /**
