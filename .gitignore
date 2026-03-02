@@ -100,3 +100,6 @@ lib/**/*
 
 # Ignore VS Code settings
 .vscode/
+
+# Ignore LLM settings
+.claude/
