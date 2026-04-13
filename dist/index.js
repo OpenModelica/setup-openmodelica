@@ -74897,7 +74897,7 @@ var linux = [
 	},
 	{
 		version: "1.25.7",
-		aptname: "1.26.0-1",
+		aptname: "1.25.7-1",
 		type: "release",
 		address: "https://build.openmodelica.org/omc/builds/linux/releases/1.25.7/"
 	},
