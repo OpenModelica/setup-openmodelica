@@ -8,6 +8,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "lib": ["ES2024"],
+    "types": ["node"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "newLine": "lf",
@@ -22,6 +23,6 @@
     "strictNullChecks": true,
     "target": "ES2024"
   },
-  "exclude": ["__tests__", "coverage", "node_modules"],
+  "exclude": ["coverage", "node_modules"],
   "include": ["src"]
 }
