@@ -6,7 +6,7 @@
   "license": "OSMC-PL-1-8",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "private": true,
   "exports": {
