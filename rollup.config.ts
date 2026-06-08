@@ -3,6 +3,7 @@ import json from '@rollup/plugin-json'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 
+/** @type {import('rollup').RollupOptions} */
 const config = {
   input: 'src/setup-openmodelica.ts',
   output: {
@@ -16,7 +17,12 @@ const config = {
     json(),
     nodeResolve({preferBuiltins: true}),
     commonjs()
-  ]
+  ],
+  onwarn(warning, warn) {
+    if (warning.id?.includes('node_modules')) return
+    if (warning.ids?.every(id => id.includes('node_modules'))) return
+    warn(warning)
+  }
 }
 
 export default config

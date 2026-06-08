@@ -18,16 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set Node.js 20.x
+      - name: Set Node.js 24.x
         uses: actions/setup-node@v6
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Install
         run: npm install
-
-      - name: Build
-        run: npm run build
 
       - name: Package
         run: npm run package
@@ -52,7 +49,7 @@ jobs:
             'omc'
             'omsimulator'
           libraries: |
-            'Modelica 4.0.0'
+            'Modelica 4.1.0'
             'Modelica 3.2.3+maint.om'
           omc-diff: true
       - run: echo $OPENMODELICAHOME

@@ -221,6 +221,36 @@
       "address": "https://build.openmodelica.org/apt"
     },
     {
+      "version": "1.26.8",
+      "aptname": "1.26.8-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.8/"
+    },
+    {
+      "version": "1.26.7",
+      "aptname": "1.26.7-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.7/"
+    },
+    {
+      "version": "1.26.6",
+      "aptname": "1.26.6-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.6/"
+    },
+    {
+      "version": "1.26.5",
+      "aptname": "1.26.5-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.5/"
+    },
+    {
+      "version": "1.26.4",
+      "aptname": "1.26.4-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.4/"
+    },
+    {
       "version": "1.26.3",
       "aptname": "1.26.3-1",
       "type": "release",

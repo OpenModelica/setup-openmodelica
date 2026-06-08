@@ -34,7 +34,7 @@ export default defineConfig([
             sourceType: "module",
 
             parserOptions: {
-                project: "./tsconfig.json",
+                project: ["./tsconfig.json", "./tsconfig.test.json"],
             },
         },
 
@@ -83,6 +83,12 @@ export default defineConfig([
             "@typescript-eslint/require-array-sort-compare": "error",
             "@typescript-eslint/restrict-plus-operands": "error",
             "@typescript-eslint/unbound-method": "error",
+        },
+    },
+    {
+        files: ["__tests__/**/*.ts"],
+        rules: {
+            "no-console": "off",
         },
     },
 ]);

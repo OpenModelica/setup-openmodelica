@@ -28,7 +28,7 @@ async function purgeOMC(): Promise<void> {
   if (matches != null && matches.length > 0) {
     const toRemove = matches[matches.length - 1]
       .replace('Install: ', '')
-      .replace(/:[^\)]*\),*/g, '')
+      .replace(/:[^)]*\),*/g, '')
     console.log(`Files to remove: ${toRemove}`)
     await exec.exec(
       `/bin/bash -c "sudo apt-get purge ${toRemove} -qy ${'||'} sudo apt-get autoremove -qy"`
@@ -41,14 +41,14 @@ async function purgeOMC(): Promise<void> {
  */
 function linuxTests(): void {
   test('Get Linux versions', async () => {
-    const releaseVersions = installer.getOMVersions()
+    installer.getOMVersions()
   })
 
   test('Get some versions', async () => {
     let outVer: installer.VersionType
 
     outVer = installer.getOMVersion('1')
-    expect(outVer.version).toEqual('1.26.3')
+    expect(outVer.version).toEqual('1.26.8')
 
     outVer = installer.getOMVersion('1.18')
     expect(outVer.version).toEqual('1.18.1')
@@ -101,7 +101,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.27.0~dev-')
+      expect(resVer).toContain('1.28.0~dev-')
     },
     10 * 60000
   )
@@ -113,7 +113,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.26.')
+      expect(resVer).toContain('1.27.')
     },
     10 * 60000
   )
@@ -191,13 +191,13 @@ function commonTests(): void {
     'Install Modelica libraries',
     async () => {
       let output = ''
-      const originalWrite = process.stdout.write
+      const originalWrite = process.stdout.write.bind(process.stdout)
 
       // Redirect stdout
-      process.stdout.write = ((chunk: any) => {
-        output += chunk
+      process.stdout.write = (chunk: Uint8Array | string): boolean => {
+        output += chunk.toString()
         return true
-      }) as any
+      }
 
       try {
         const libraries = ['Modelica 4.0.0', 'NeuralNetwork 2.1.0']
