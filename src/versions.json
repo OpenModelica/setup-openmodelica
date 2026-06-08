@@ -10,13 +10,43 @@
       "version": "stable",
       "type": "stable",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/3/64bit/OpenModelica-v1.26.3-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/8/64bit/OpenModelica-v1.26.8-64bit.exe"
     },
     {
       "version": "release",
       "type": "release",
       "arch": "64",
-      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/3/64bit/OpenModelica-v1.26.3-64bit.exe"
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/8/64bit/OpenModelica-v1.26.8-64bit.exe"
+    },
+    {
+      "version": "1.26.8",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/8/64bit/OpenModelica-v1.26.8-64bit.exe"
+    },
+    {
+      "version": "1.26.7",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/7/64bit/OpenModelica-v1.26.7-64bit.exe"
+    },
+    {
+      "version": "1.26.6",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/6/64bit/OpenModelica-v1.26.6-64bit.exe"
+    },
+    {
+      "version": "1.26.5",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/5/64bit/OpenModelica-v1.26.5-64bit.exe"
+    },
+    {
+      "version": "1.26.4",
+      "type": "release",
+      "arch": "64",
+      "address": "https://build.openmodelica.org/omc/builds/windows/releases/1.26/4/64bit/OpenModelica-v1.26.4-64bit.exe"
     },
     {
       "version": "1.26.3",
@@ -219,6 +249,36 @@
       "version": "1",
       "type": "stable",
       "address": "https://build.openmodelica.org/apt"
+    },
+    {
+      "version": "1.26.8",
+      "aptname": "1.26.8-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.8/"
+    },
+    {
+      "version": "1.26.7",
+      "aptname": "1.26.7-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.7/"
+    },
+    {
+      "version": "1.26.6",
+      "aptname": "1.26.6-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.6/"
+    },
+    {
+      "version": "1.26.5",
+      "aptname": "1.26.5-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.5/"
+    },
+    {
+      "version": "1.26.4",
+      "aptname": "1.26.4-1",
+      "type": "release",
+      "address": "https://build.openmodelica.org/omc/builds/linux/releases/1.26.4/"
     },
     {
       "version": "1.26.3",

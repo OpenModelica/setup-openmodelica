@@ -16,7 +16,11 @@ const config = {
     json(),
     nodeResolve({preferBuiltins: true}),
     commonjs()
-  ]
+  ],
+  onwarn(warning, warn) {
+    if (warning.id?.includes('node_modules')) return
+    warn(warning)
+  }
 }
 
 export default config
