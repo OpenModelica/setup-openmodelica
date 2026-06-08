@@ -48,7 +48,7 @@ function linuxTests(): void {
     let outVer: installer.VersionType
 
     outVer = installer.getOMVersion('1')
-    expect(outVer.version).toEqual('1.26.3')
+    expect(outVer.version).toEqual('1.26.8')
 
     outVer = installer.getOMVersion('1.18')
     expect(outVer.version).toEqual('1.18.1')
@@ -101,7 +101,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.27.0~dev-')
+      expect(resVer).toContain('1.28.0~dev-')
     },
     10 * 60000
   )
@@ -113,7 +113,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('stable')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.26.')
+      expect(resVer).toContain('1.27.')
     },
     10 * 60000
   )
