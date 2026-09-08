@@ -8,10 +8,8 @@ const config = {
   coverageReporters: ['json-summary', 'text', 'lcov'],
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'js'],
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
-  },
-  preset: 'ts-jest/presets/default-esm',
+  preset: 'ts-jest',
+  reporters: ['default'],
   resolver: 'ts-jest-resolver',
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
