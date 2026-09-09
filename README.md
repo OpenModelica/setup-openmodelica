@@ -16,7 +16,7 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 - `version`: Version of OpenModelica to install.
   - For example `'nightly'`, `'stable'`, `'release'`, `'1.24'` or `'1.24.5'`.
 - `architecture`: Choose between 64 and 32 bit architecture. Can be `'64'` or
-                  `'32'`.
+  `'32'`.
 - `packages`: OpenModelica APT packages to install. Only used on Linux OS.
   - For example `'omc'` for the OpenModelica Compiler or `'omsimulator'` for
     OMSimulator. Use one package per line.
@@ -26,94 +26,94 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
     only and all dependencies.
 
     ```yml
-      libraries: |
-        'Modelica 4.0.0'
-        'Modelica 3.2.3+maint.om'
+    libraries: |
+      'Modelica 4.0.0'
+      'Modelica 3.2.3+maint.om'
     ```
 
 ## Available OpenModelica versions
 
 ### Linux
 
-| Version      | OS      | Arch                      | Available |
-|--------------|---------|---------------------------|-----------|
-| nightly      | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| stable       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| release      | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.26.3       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.26.2       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.26.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.26.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.7       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.6       | Linux   | amd64, arm64, armhf, i386 | ❌        |
-| 1.25.5       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.4       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.3       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.2       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.25.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.24.5       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.23.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.23.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.22.4       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.22.3       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.22.2       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.22.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.22.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.21.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.20.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.20.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.19.2       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.19.1       | Linux   | amd64, arm64, armhf, i386 | ❌        |
-| 1.19.0       | Linux   | amd64, arm64, armhf, i386 | ❌        |
-| 1.18.1       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.18.0       | Linux   | amd64, arm64, armhf, i386 | ✔️        |
-| 1.17.0       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.16.5       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.16.4       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.16.2       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.16.1       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.16.0       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.14.2       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.14.1       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
-| 1.13.2       | Linux   | amd64, arm64, armhf, i386 | ☑️        |
+| Version | OS    | Arch                      | Available |
+| ------- | ----- | ------------------------- | --------- |
+| nightly | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| stable  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| release | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.26.3  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.26.2  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.26.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.26.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.7  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.6  | Linux | amd64, arm64, armhf, i386 | ❌        |
+| 1.25.5  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.4  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.3  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.2  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.25.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.24.5  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.23.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.23.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.22.4  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.22.3  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.22.2  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.22.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.22.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.21.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.20.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.20.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.19.2  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.19.1  | Linux | amd64, arm64, armhf, i386 | ❌        |
+| 1.19.0  | Linux | amd64, arm64, armhf, i386 | ❌        |
+| 1.18.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.18.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.17.0  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.16.5  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.16.4  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.16.2  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.16.1  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.16.0  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.14.2  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.14.1  | Linux | amd64, arm64, armhf, i386 | ☑️        |
+| 1.13.2  | Linux | amd64, arm64, armhf, i386 | ☑️        |
 
 ✔️: Available ☑️: Available, but untested ❌: Not available
 
 ## Windows
 
-| Version      | OS      | Arch                      | Available |
-|--------------|---------|---------------------------|-----------|
-| nightly      | Windows | 64bit                     | ✔️        |
-| stable       | Windows | 64bit                     | ✔️        |
-| release      | Windows | 64bit                     | ✔️        |
-| 1.26.3       | Windows | 64bit                     | ✔️        |
-| 1.26.2       | Windows | 64bit                     | ✔️        |
-| 1.26.1       | Windows | 64bit                     | ✔️        |
-| 1.26.0       | Windows | 64bit                     | ✔️        |
-| 1.25.7       | Windows | 64bit                     | ✔️        |
-| 1.25.6       | Windows | 64bit                     | ❌        |
-| 1.25.5       | Windows | 64bit                     | ✔️        |
-| 1.25.4       | Windows | 64bit                     | ✔️        |
-| 1.25.3       | Windows | 64bit                     | ✔️        |
-| 1.25.2       | Windows | 64bit                     | ✔️        |
-| 1.25.1       | Windows | 64bit                     | ✔️        |
-| 1.25.0       | Windows | 64bit                     | ✔️        |
-| 1.24.5       | Windows | 64bit                     | ✔️        |
-| 1.23.1       | Windows | 64bit                     | ✔️        |
-| 1.23.0       | Windows | 64bit                     | ✔️        |
-| 1.22.3       | Windows | 64bit                     | ✔️        |
-| 1.22.2       | Windows | 64bit                     | ✔️        |
-| 1.22.1       | Windows | 64bit                     | ✔️        |
-| 1.22.0       | Windows | 64bit                     | ✔️        |
-| 1.21.0       | Windows | 64bit                     | ✔️        |
-| 1.20.0       | Windows | 64bit                     | ✔️        |
-| 1.19.2       | Windows | 64bit                     | ✔️        |
-| 1.19.0       | Windows | 64bit                     | ☑️        |
-| 1.18.1       | Windows | 64bit                     | ☑️        |
-| 1.18.0       | Windows | 64bit                     | ☑️        |
-| 1.17.0       | Windows | 64bit                     | ☑️        |
-| all          | Windows | 32bit                     | ❌        |
+| Version | OS      | Arch  | Available |
+| ------- | ------- | ----- | --------- |
+| nightly | Windows | 64bit | ✔️        |
+| stable  | Windows | 64bit | ✔️        |
+| release | Windows | 64bit | ✔️        |
+| 1.26.3  | Windows | 64bit | ✔️        |
+| 1.26.2  | Windows | 64bit | ✔️        |
+| 1.26.1  | Windows | 64bit | ✔️        |
+| 1.26.0  | Windows | 64bit | ✔️        |
+| 1.25.7  | Windows | 64bit | ✔️        |
+| 1.25.6  | Windows | 64bit | ❌        |
+| 1.25.5  | Windows | 64bit | ✔️        |
+| 1.25.4  | Windows | 64bit | ✔️        |
+| 1.25.3  | Windows | 64bit | ✔️        |
+| 1.25.2  | Windows | 64bit | ✔️        |
+| 1.25.1  | Windows | 64bit | ✔️        |
+| 1.25.0  | Windows | 64bit | ✔️        |
+| 1.24.5  | Windows | 64bit | ✔️        |
+| 1.23.1  | Windows | 64bit | ✔️        |
+| 1.23.0  | Windows | 64bit | ✔️        |
+| 1.22.3  | Windows | 64bit | ✔️        |
+| 1.22.2  | Windows | 64bit | ✔️        |
+| 1.22.1  | Windows | 64bit | ✔️        |
+| 1.22.0  | Windows | 64bit | ✔️        |
+| 1.21.0  | Windows | 64bit | ✔️        |
+| 1.20.0  | Windows | 64bit | ✔️        |
+| 1.19.2  | Windows | 64bit | ✔️        |
+| 1.19.0  | Windows | 64bit | ☑️        |
+| 1.18.1  | Windows | 64bit | ☑️        |
+| 1.18.0  | Windows | 64bit | ☑️        |
+| 1.17.0  | Windows | 64bit | ☑️        |
+| all     | Windows | 32bit | ❌        |
 
 ✔️: Available ☑️: Available, but untested ❌: Not available
 
@@ -191,11 +191,11 @@ project, supported by the German
 [Federal Ministry for Economic Affairs and Climate Action][bmwk]
 with project number `19|200022G`.
 
-[build-test-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml/badge.svg "Build Badge"
+[build-test-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml/badge.svg 'Build Badge'
 [build-test-link]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/test.yml
-[check-dist-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg "Check dist/ Badge"
+[check-dist-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml/badge.svg 'Check dist/ Badge'
 [check-dist-link]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/check-dist.yml
-[codeql-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg "CodeQL Badge"
+[codeql-badge]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml/badge.svg 'CodeQL Badge'
 [codeql-link]: https://github.com/OpenModelica/setup-openmodelica/actions/workflows/codeql-analysis.yml
 [om-package-manager-link]: https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html
 [issue-36-link]: https://github.com/AnHeuermann/setup-openmodelica/issues/36
