@@ -6,7 +6,7 @@ on:
       - main
       - 'releases/*'
   repository_dispatch:
-    types: [dependabot-dist-updated]
+    types: [dist-autocommit]
 
 jobs:
   build: # make sure build/ci works properly
