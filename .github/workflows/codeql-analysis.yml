@@ -19,8 +19,7 @@ on:
     branches: [main]
   schedule:
     - cron: '31 7 * * 3'
-  repository_dispatch:
-    types: [dist-autocommit]
+  workflow_dispatch:
 
 jobs:
   analyze:
