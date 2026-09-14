@@ -8,8 +8,11 @@
 # Dependabot PR - both may get a read-only GITHUB_TOKEN), a mismatch is
 # committed and pushed back to the PR branch automatically instead of just
 # failing. Note: GITHUB_TOKEN pushes never trigger new workflow runs, so this
-# run's status still reflects the pre-fix commit - the repository_dispatch
-# below re-triggers this and the other workflows on the new commit.
+# run's status still reflects the pre-fix commit - the workflow_dispatch calls
+# below re-trigger this and the other workflows against the branch we just
+# pushed to, so the PR's head commit ends up with real check runs instead of
+# none at all. (repository_dispatch can't be used for this: it always runs
+# against the default branch, not the branch that dispatched it.)
 name: Check dist/
 
 on:
@@ -22,14 +25,13 @@ on:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
-  repository_dispatch:
-    types: [dist-autocommit]
 
 jobs:
   check-dist:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,12 +76,16 @@ jobs:
           git push origin "HEAD:${{ github.head_ref }}"
 
       # GITHUB_TOKEN pushes don't trigger new workflow runs, so explicitly
-      # re-trigger this and the other workflows on the commit we just pushed.
+      # re-run the required workflows against the branch we just pushed to
+      # (workflow_dispatch takes a ref, unlike repository_dispatch).
       - name: Trigger re-check of the pushed fix
         if: steps.autocommit.outcome == 'success'
-        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
-        with:
-          event-type: dist-autocommit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          for workflow in check-dist.yml test.yml codeql-analysis.yml; do
+            gh workflow run "$workflow" --ref "${{ github.head_ref }}"
+          done
 
       - name: Fail if dist/ is still out of date
         if: steps.diff.outputs.changed == 'true' && steps.autocommit.outcome != 'success'
