@@ -84301,7 +84301,7 @@ async function installOmcDiff(useSudo) {
  */
 async function run() {
     try {
-        debug('Starting run');
+        debug('Starting setup-openmodelica run');
         // Inputs
         let versionInput = getInput('version');
         if (!versionInput) {
