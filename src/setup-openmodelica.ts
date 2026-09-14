@@ -39,7 +39,7 @@ import * as installer from './installer.js'
 
 export async function run(): Promise<void> {
   try {
-    core.debug('Starting run')
+    core.debug('Starting setup-openmodelica run')
     // Inputs
     let versionInput: string = core.getInput('version')
     if (!versionInput) {
