@@ -83394,6 +83394,18 @@ var windows = [
 		address: "https://build.openmodelica.org/omc/builds/windows/releases/1.26/3/64bit/OpenModelica-v1.26.3-64bit.exe"
 	},
 	{
+		version: "1.27.1",
+		type: "release",
+		arch: "64",
+		address: "https://build.openmodelica.org/omc/builds/windows/releases/1.27/1/64bit/OpenModelica-v1.27.1-64bit.exe"
+	},
+	{
+		version: "1.27.0",
+		type: "release",
+		arch: "64",
+		address: "https://build.openmodelica.org/omc/builds/windows/releases/1.27/0/64bin/OpenModelica-v1.27.0-64bit.exe"
+	},
+	{
 		version: "1.26.3",
 		type: "release",
 		arch: "64",
@@ -83594,6 +83606,12 @@ var linux = [
 		version: "1",
 		type: "stable",
 		address: "https://build.openmodelica.org/apt"
+	},
+	{
+		version: "1.27.0",
+		aptname: "1.27.0-1",
+		type: "release",
+		address: "https://build.openmodelica.org/omc/builds/linux/releases/1.27.0/"
 	},
 	{
 		version: "1.26.8",
