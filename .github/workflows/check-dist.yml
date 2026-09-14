@@ -3,6 +3,13 @@
 # `index.js` is the code that will run.
 # For our project, we generate this file through a build process from other source files.
 # We need to make sure the checked-in `index.js` actually matches what we expect it to be.
+#
+# On a pull_request from a branch of this repository (not a fork, and not a
+# Dependabot PR - both may get a read-only GITHUB_TOKEN), a mismatch is
+# committed and pushed back to the PR branch automatically instead of just
+# failing. Note: GITHUB_TOKEN pushes never trigger new workflow runs, so this
+# run's status still reflects the pre-fix commit - the repository_dispatch
+# below re-triggers this and the other workflows on the new commit.
 name: Check dist/
 
 on:
@@ -16,14 +23,18 @@ on:
       - '**.md'
   workflow_dispatch:
   repository_dispatch:
-    types: [dependabot-dist-updated]
+    types: [dist-autocommit]
 
 jobs:
   check-dist:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Set Node.js 24.x
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -37,17 +48,50 @@ jobs:
         run: npm run package
 
       - name: Compare the expected and actual dist/ directories
+        id: diff
         run: |
           if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Detected uncommitted changes after build.  See status below:"
-            git diff
-            exit 1
+            git diff --ignore-space-at-eol dist/
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
-        id: diff
 
-      # If index.js was different than expected, upload the expected version as an artifact
+      # Only attempted on a pull_request; a plain push to main has no branch
+      # to push the fix to. Fork and (possibly) Dependabot PRs get a
+      # read-only token, so the push fails here and falls through to the
+      # artifact upload below.
+      - name: Commit dist/ fix to PR branch
+        id: autocommit
+        if: steps.diff.outputs.changed == 'true' && github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/
+          git commit -m "Rebuild dist/ [skip ci]"
+          git push origin "HEAD:${{ github.head_ref }}"
+
+      # GITHUB_TOKEN pushes don't trigger new workflow runs, so explicitly
+      # re-trigger this and the other workflows on the commit we just pushed.
+      - name: Trigger re-check of the pushed fix
+        if: steps.autocommit.outcome == 'success'
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          event-type: dist-autocommit
+
+      - name: Fail if dist/ is still out of date
+        if: steps.diff.outputs.changed == 'true' && steps.autocommit.outcome != 'success'
+        run: |
+          echo "::error::dist/ does not match the build output and could not be auto-committed. Run 'npm run package' locally and commit the result."
+          exit 1
+
+      # If dist/ was different than expected and it could not be
+      # auto-committed (push to main, fork PR, or Dependabot PR), upload the
+      # expected version as a workflow artifact.
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
+        if: ${{ steps.diff.outputs.changed == 'true' && steps.autocommit.outcome != 'success' }}
         with:
           name: dist
           path: dist/

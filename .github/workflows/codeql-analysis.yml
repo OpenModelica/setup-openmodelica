@@ -20,7 +20,7 @@ on:
   schedule:
     - cron: '31 7 * * 3'
   repository_dispatch:
-    types: [dependabot-dist-updated]
+    types: [dist-autocommit]
 
 jobs:
   analyze:
