@@ -314,7 +314,12 @@ export async function showVersion(program: string): Promise<string> {
     )
   }
 
-  const version = out.stdout.trim().split(' ')[1]
+  // Output is e.g. "OpenModelica 1.26.3" (Linux release),
+  // "OpenModelica v1.26.3 (64-bit)" (Windows) or
+  // "v1.28.0-dev.1157+g76218b5.cmake" (CMake-based nightly)
+  const tokens = out.stdout.trim().split(/\s+/)
+  const token = tokens.find(t => /^v?\d+\.\d+/.test(t)) ?? tokens[1]
+  const version = token?.replace(/^v(?=\d)/, '')
   return version
 }
 

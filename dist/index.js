@@ -83406,6 +83406,18 @@ var windows = [
 		address: "https://build.openmodelica.org/omc/builds/windows/releases/1.27/0/64bin/OpenModelica-v1.27.0-64bit.exe"
 	},
 	{
+		version: "1.26.9",
+		type: "release",
+		arch: "64",
+		address: "https://build.openmodelica.org/omc/builds/windows/releases/1.26/9/64bit/OpenModelica-v1.26.9-64bit.exe"
+	},
+	{
+		version: "1.26.8",
+		type: "release",
+		arch: "64",
+		address: "https://build.openmodelica.org/omc/builds/windows/releases/1.26/8/64bit/OpenModelica-v1.26.8-64bit.exe"
+	},
+	{
 		version: "1.26.3",
 		type: "release",
 		arch: "64",
@@ -83608,10 +83620,22 @@ var linux = [
 		address: "https://build.openmodelica.org/apt"
 	},
 	{
+		version: "1.27.1",
+		aptname: "1.27.1-1",
+		type: "release",
+		address: "https://build.openmodelica.org/omc/builds/linux/releases/1.27.1/"
+	},
+	{
 		version: "1.27.0",
 		aptname: "1.27.0-1",
 		type: "release",
 		address: "https://build.openmodelica.org/omc/builds/linux/releases/1.27.0/"
+	},
+	{
+		version: "1.26.9",
+		aptname: "1.26.9-1",
+		type: "release",
+		address: "https://build.openmodelica.org/omc/builds/linux/releases/1.26.9/"
 	},
 	{
 		version: "1.26.8",
@@ -84187,7 +84211,12 @@ async function showVersion(program) {
         debug(`Error message: ${out.stderr}`);
         setFailed(Error(`${program} could not be installed properly. Exit code: ${out.exitCode}`));
     }
-    const version = out.stdout.trim().split(' ')[1];
+    // Output is e.g. "OpenModelica 1.26.3" (Linux release),
+    // "OpenModelica v1.26.3 (64-bit)" (Windows) or
+    // "v1.28.0-dev.1157+g76218b5.cmake" (CMake-based nightly)
+    const tokens = out.stdout.trim().split(/\s+/);
+    const token = tokens.find(t => /^v?\d+\.\d+/.test(t)) ?? tokens[1];
+    const version = token?.replace(/^v(?=\d)/, '');
     return version;
 }
 /**

@@ -40,8 +40,10 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | nightly | Linux | amd64, arm64, armhf, i386 | ✔️        |
 | stable  | Linux | amd64, arm64, armhf, i386 | ✔️        |
 | release | Linux | amd64, arm64, armhf, i386 | ✔️        |
-| 1.27.1  | Linux | amd64, arm64, armhf, i386 | ❌        |
+| 1.27.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
 | 1.27.0  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.26.9  | Linux | amd64, arm64, armhf, i386 | ✔️        |
+| 1.26.8  | Linux | amd64, arm64, armhf, i386 | ✔️        |
 | 1.26.3  | Linux | amd64, arm64, armhf, i386 | ✔️        |
 | 1.26.2  | Linux | amd64, arm64, armhf, i386 | ✔️        |
 | 1.26.1  | Linux | amd64, arm64, armhf, i386 | ✔️        |
@@ -91,6 +93,8 @@ Afterwards the OpenModelica Package manager installs Modelica libraries.
 | release | Windows | 64bit | ✔️        |
 | 1.27.1  | Windows | 64bit | ✔️        |
 | 1.27.0  | Windows | 64bit | ✔️        |
+| 1.26.9  | Windows | 64bit | ✔️        |
+| 1.26.8  | Windows | 64bit | ✔️        |
 | 1.26.3  | Windows | 64bit | ✔️        |
 | 1.26.2  | Windows | 64bit | ✔️        |
 | 1.26.1  | Windows | 64bit | ✔️        |
