@@ -101,7 +101,7 @@ function linuxTests(): void {
       const version = installer.getOMVersion('nightly')
       await installer.installOM(['omc'], version, '64')
       const resVer = await installer.showVersion('omc')
-      expect(resVer).toContain('1.28.0~dev-')
+      expect(resVer).toMatch(/^1\.28\.0[~-]dev/)
     },
     10 * 60000
   )
