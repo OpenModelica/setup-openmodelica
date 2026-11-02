@@ -4,14 +4,20 @@
 # For our project, we generate this file through a build process from other source files.
 # We need to make sure the checked-in `index.js` actually matches what we expect it to be.
 #
-# On a pull_request from a branch of this repository (not a fork, and not a
-# Dependabot PR - both may get a read-only GITHUB_TOKEN), a mismatch is
-# committed and pushed back to the PR branch automatically instead of just
-# failing. Note: GITHUB_TOKEN pushes never trigger new workflow runs, so this
-# run's status still reflects the pre-fix commit - the workflow_dispatch calls
-# below re-trigger this and the other workflows against the branch we just
-# pushed to, so the PR's head commit ends up with real check runs instead of
-# none at all. (repository_dispatch can't be used for this: it always runs
+# Installing and building runs code from our dependencies, so this is split
+# into two jobs:
+#   - build-dist installs and builds with a read-only token.
+#   - check-dist is the required check. It has write access but never installs
+#     or runs anything from the PR. On a pull_request from a branch of this
+#     repository (including Dependabot's) it commits the dist/ built by
+#     build-dist back to the PR branch. In all other cases (fork PR, push to
+#     main) a mismatch fails, and the expected dist/ is available as a
+#     workflow artifact.
+#
+# GITHUB_TOKEN pushes never trigger new workflow runs, so the workflow_dispatch
+# calls below re-trigger this and the other workflows against the branch we
+# just pushed to, so the PR's head commit ends up with real check runs instead
+# of none at all. (repository_dispatch can't be used for this: it always runs
 # against the default branch, not the branch that dispatched it.)
 name: Check dist/
 
@@ -26,17 +32,22 @@ on:
       - '**.md'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  check-dist:
+  build-dist:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      actions: write
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - name: Set Node.js 24.x
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -44,7 +55,7 @@ jobs:
           node-version: 24.x
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Rebuild the dist/ directory
         run: npm run package
@@ -60,44 +71,70 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # Only attempted on a pull_request; a plain push to main has no branch
-      # to push the fix to. Fork and (possibly) Dependabot PRs get a
-      # read-only token, so the push fails here and falls through to the
-      # artifact upload below.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          name: dist
+          path: dist/
+
+  # always(): a skipped job would count as passing the required check.
+  check-dist:
+    needs: build-dist
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      BUILD_RESULT: ${{ needs.build-dist.result }}
+      DIST_CHANGED: ${{ needs.build-dist.outputs.changed }}
+      CAN_PUSH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+      HEAD_REF: ${{ github.head_ref }}
+
+    steps:
+      - name: Evaluate the build result
+        run: |
+          if [ "$BUILD_RESULT" != "success" ]; then
+            echo "::error::Building dist/ failed, see the build-dist job."
+            exit 1
+          fi
+          if [ "$DIST_CHANGED" = "true" ] && [ "$CAN_PUSH" != "true" ]; then
+            echo "::error::dist/ does not match the build output and could not be auto-committed. Run 'npm run package' locally and commit the result."
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.DIST_CHANGED == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Remove the outdated dist/ directory
+        if: env.DIST_CHANGED == 'true'
+        run: rm -rf dist/
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: env.DIST_CHANGED == 'true'
+        with:
+          name: dist
+          path: dist/
+
       - name: Commit dist/ fix to PR branch
-        id: autocommit
-        if: steps.diff.outputs.changed == 'true' && github.event_name == 'pull_request'
-        continue-on-error: true
+        if: env.DIST_CHANGED == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add dist/
           git commit -m "Rebuild dist/ [skip ci]"
-          git push origin "HEAD:${{ github.head_ref }}"
+          git push origin "HEAD:refs/heads/$HEAD_REF"
 
       # GITHUB_TOKEN pushes don't trigger new workflow runs, so explicitly
       # re-run the required workflows against the branch we just pushed to
       # (workflow_dispatch takes a ref, unlike repository_dispatch).
       - name: Trigger re-check of the pushed fix
-        if: steps.autocommit.outcome == 'success'
+        if: env.DIST_CHANGED == 'true'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           for workflow in check-dist.yml test.yml codeql-analysis.yml; do
-            gh workflow run "$workflow" --ref "${{ github.head_ref }}"
+            gh workflow run "$workflow" --ref "$HEAD_REF"
           done
-
-      - name: Fail if dist/ is still out of date
-        if: steps.diff.outputs.changed == 'true' && steps.autocommit.outcome != 'success'
-        run: |
-          echo "::error::dist/ does not match the build output and could not be auto-committed. Run 'npm run package' locally and commit the result."
-          exit 1
-
-      # If dist/ was different than expected and it could not be
-      # auto-committed (push to main, fork PR, or Dependabot PR), upload the
-      # expected version as a workflow artifact.
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: ${{ steps.diff.outputs.changed == 'true' && steps.autocommit.outcome != 'success' }}
-        with:
-          name: dist
-          path: dist/
