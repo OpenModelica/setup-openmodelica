@@ -7,6 +7,11 @@ on:
       - 'releases/*'
   workflow_dispatch:
 
+# The repository default is a write token, and this workflow runs code from our
+# dependencies.
+permissions:
+  contents: read
+
 jobs:
   build: # make sure build/ci works properly
     strategy:
@@ -23,7 +28,7 @@ jobs:
           node-version: 24.x
 
       - name: Install
-        run: npm install
+        run: npm ci --ignore-scripts
 
       - name: Check Format
         run: npm run format:check

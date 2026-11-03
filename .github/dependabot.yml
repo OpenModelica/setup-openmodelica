@@ -4,6 +4,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       actions-minor:
         update-types:
@@ -14,9 +16,20 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
+    # typescript-eslint currently requires TypeScript >=4.8.4 <6.1.0.
+    # Remove this restriction when its peer dependency supports newer versions.
+    ignore:
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
+    # Majors are kept apart so that one breaking package can't block the
+    # minor and patch updates, which are merged automatically.
     groups:
-      npm-all:
+      npm-minor-patch:
         update-types:
-          - major
           - minor
           - patch
+      npm-major:
+        update-types:
+          - major
