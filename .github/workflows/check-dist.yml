@@ -7,18 +7,17 @@
 # Installing and building runs code from our dependencies, so this is split
 # into two jobs:
 #   - build-dist installs and builds with a read-only token.
-#   - check-dist is the required check. It has write access but never installs
-#     or runs anything from the PR. On a pull_request from a branch of this
-#     repository (including Dependabot's) it commits the dist/ built by
-#     build-dist back to the PR branch. In all other cases (fork PR, push to
-#     main) a mismatch fails, and the expected dist/ is available as a
-#     workflow artifact.
+#   - check-dist is the required check. It never installs or runs anything
+#     from the PR. On a pull_request from a branch of this repository
+#     (including Dependabot's) it commits the dist/ built by build-dist back
+#     to the PR branch. In all other cases (fork PR, push to main) a mismatch
+#     fails, and the expected dist/ is available as a workflow artifact.
 #
-# GITHUB_TOKEN pushes never trigger new workflow runs, so the workflow_dispatch
-# calls below re-trigger this and the other workflows against the branch we
-# just pushed to, so the PR's head commit ends up with real check runs instead
-# of none at all. (repository_dispatch can't be used for this: it always runs
-# against the default branch, not the branch that dispatched it.)
+# The push uses a GitHub App token, because GITHUB_TOKEN pushes don't trigger
+# new workflow runs and the PR would never get its required checks. The App's
+# client ID and private key must be set as both Actions and Dependabot secrets
+# (DIST_BOT_CLIENT_ID, DIST_BOT_PRIVATE_KEY), since Dependabot's runs only get
+# the latter.
 name: Check dist/
 
 on:
@@ -83,8 +82,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      actions: write
+      contents: read
     env:
       BUILD_RESULT: ${{ needs.build-dist.result }}
       DIST_CHANGED: ${{ needs.build-dist.outputs.changed }}
@@ -103,10 +101,19 @@ jobs:
             exit 1
           fi
 
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        if: env.DIST_CHANGED == 'true'
+        with:
+          client-id: ${{ secrets.DIST_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.DIST_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: env.DIST_CHANGED == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Remove the outdated dist/ directory
         if: env.DIST_CHANGED == 'true'
@@ -118,23 +125,17 @@ jobs:
           name: dist
           path: dist/
 
+      # This push triggers a new run, so stop if the last rebuild didn't settle
+      # dist/ instead of pushing forever.
       - name: Commit dist/ fix to PR branch
         if: env.DIST_CHANGED == 'true'
         run: |
+          if [ "$(git log -1 --format=%s)" = "Rebuild dist/" ]; then
+            echo "::error::dist/ still differs after being rebuilt. Is the build deterministic?"
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add dist/
-          git commit -m "Rebuild dist/ [skip ci]"
+          git commit -m "Rebuild dist/"
           git push origin "HEAD:refs/heads/$HEAD_REF"
-
-      # GITHUB_TOKEN pushes don't trigger new workflow runs, so explicitly
-      # re-run the required workflows against the branch we just pushed to
-      # (workflow_dispatch takes a ref, unlike repository_dispatch).
-      - name: Trigger re-check of the pushed fix
-        if: env.DIST_CHANGED == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for workflow in check-dist.yml test.yml codeql-analysis.yml; do
-            gh workflow run "$workflow" --ref "$HEAD_REF"
-          done

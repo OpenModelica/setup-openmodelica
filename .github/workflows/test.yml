@@ -7,8 +7,8 @@ on:
       - 'releases/*'
   workflow_dispatch:
 
-# The repository default is a write token, and check-dist.yml re-triggers this
-# workflow with workflow_dispatch, which isn't read-only for Dependabot PRs.
+# The repository default is a write token, and this workflow runs code from our
+# dependencies.
 permissions:
   contents: read
 
