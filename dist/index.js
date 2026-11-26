@@ -2578,11 +2578,77 @@ function requireRequest$1 () {
 	    }
 	  }
 
-	  onUpgrade (statusCode, headers, socket) {
+	  /**
+	   * @param {number|null} statusCode
+	   * @param {Buffer[]|null} headers
+	   * @param {import('node:stream').Duplex} socket
+	   * @param {string} [statusText]
+	   */
+	  onUpgrade (statusCode, headers, socket, statusText = '') {
+	    this.onFinally();
+
 	    assert(!this.aborted);
 	    assert(!this.completed);
 
-	    return this[kHandler].onUpgrade(statusCode, headers, socket)
+	    if (statusCode !== null) {
+	      this.#publishUpgradeHeaders(statusCode, headers, statusText);
+	    }
+
+	    const result = this[kHandler].onUpgrade(statusCode, headers, socket);
+
+	    if (!this.aborted) {
+	      this.completed = true;
+	      if (statusCode !== null) {
+	        this.#publishUpgradeTrailers();
+	      }
+	    }
+
+	    return result
+	  }
+
+	  /**
+	   * @param {number} statusCode
+	   * @param {import('node:http2').IncomingHttpHeaders} headers
+	   * @param {(headers: import('node:http2').IncomingHttpHeaders) => Buffer[]} parseHeaders
+	   * @param {string} [statusText]
+	   */
+	  onUpgradeResponse (statusCode, headers, parseHeaders, statusText = '') {
+	    assert(!this.aborted);
+	    assert(this.completed);
+
+	    if (channels.headers.hasSubscribers) {
+	      this.#publishUpgradeHeaders(statusCode, parseHeaders(headers), statusText);
+	    }
+	    this.#publishUpgradeTrailers();
+	  }
+
+	  /**
+	   * @param {Error} error
+	   */
+	  onUpgradeError (error) {
+	    assert(!this.aborted);
+	    assert(this.completed);
+
+	    if (channels.error.hasSubscribers) {
+	      channels.error.publish({ request: this, error });
+	    }
+	  }
+
+	  /**
+	   * @param {number} statusCode
+	   * @param {Buffer[]} headers
+	   * @param {string} statusText
+	   */
+	  #publishUpgradeHeaders (statusCode, headers, statusText) {
+	    if (channels.headers.hasSubscribers) {
+	      channels.headers.publish({ request: this, response: { statusCode, headers, statusText } });
+	    }
+	  }
+
+	  #publishUpgradeTrailers () {
+	    if (channels.trailers.hasSubscribers) {
+	      channels.trailers.publish({ request: this, trailers: [] });
+	    }
 	  }
 
 	  onComplete (trailers) {
@@ -2812,6 +2878,7 @@ function requireDispatcherBase () {
 	if (hasRequiredDispatcherBase) return dispatcherBase;
 	hasRequiredDispatcherBase = 1;
 
+	const buffer = require$$0$1;
 	const Dispatcher = requireDispatcher();
 	const {
 	  ClientDestroyedError,
@@ -2824,6 +2891,7 @@ function requireDispatcherBase () {
 	const kOnClosed = Symbol('onClosed');
 	const kInterceptedDispatch = Symbol('Intercepted Dispatch');
 	const kWebSocketOptions = Symbol('webSocketOptions');
+	const kEventSourceOptions = Symbol('eventSourceOptions');
 
 	class DispatcherBase extends Dispatcher {
 	  constructor (opts) {
@@ -2834,12 +2902,19 @@ function requireDispatcherBase () {
 	    this[kClosed] = false;
 	    this[kOnClosed] = [];
 	    this[kWebSocketOptions] = opts?.webSocket ?? {};
+	    this[kEventSourceOptions] = opts?.eventSource ?? {};
 	  }
 
 	  get webSocketOptions () {
 	    return {
 	      maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
 	      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+	    }
+	  }
+
+	  get eventSourceOptions () {
+	    return {
+	      maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
 	    }
 	  }
 
@@ -9165,7 +9240,7 @@ function requireClientH1 () {
 	  }
 
 	  onUpgrade (head) {
-	    const { upgrade, client, socket, headers, statusCode } = this;
+	    const { upgrade, client, socket, headers, statusCode, statusText } = this;
 
 	    assert(upgrade);
 	    assert(client[kSocket] === socket);
@@ -9200,9 +9275,10 @@ function requireClientH1 () {
 	    client.emit('disconnect', client[kUrl], [client], new InformationalError('upgrade'));
 
 	    try {
-	      request.onUpgrade(statusCode, headers, socket);
-	    } catch (err) {
-	      util.destroy(socket, err);
+	      request.onUpgrade(statusCode, headers, socket, statusText);
+	    } catch (error) {
+	      util.errorRequest(client, request, error);
+	      util.destroy(socket, error);
 	    }
 
 	    client[kResume]();
@@ -9459,8 +9535,6 @@ function requireClientH1 () {
 	  socket[kParser] = new Parser(client, socket, llhttpInstance);
 
 	  addListener(socket, 'error', function (err) {
-	    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	    const parser = this[kParser];
 
 	    // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
@@ -9783,12 +9857,22 @@ function requireClientH1 () {
 	  const socket = client[kSocket];
 	  clearIdleSocketValidation(socket);
 
-	  const abort = (err) => {
-	    if (request.aborted || request.completed) {
+	  /**
+	   * @param {Error} [error]
+	   */
+	  const abort = (error) => {
+	    if (request.aborted) {
 	      return
 	    }
 
-	    util.errorRequest(client, request, err || new RequestAbortedError());
+	    if (request.completed) {
+	      if (request.upgrade || request.method === 'CONNECT') {
+	        util.destroy(socket, new InformationalError('aborted'));
+	      }
+	      return
+	    }
+
+	    util.errorRequest(client, request, error || new RequestAbortedError());
 
 	    util.destroy(body);
 	    util.destroy(socket, new InformationalError('aborted'));
@@ -10246,6 +10330,7 @@ function requireClientH2 () {
 	hasRequiredClientH2 = 1;
 
 	const assert = require$$0$2;
+	const { errorMonitor } = require$$8;
 	const { pipeline } = require$$0$3;
 	const util = requireUtil$7();
 	const {
@@ -10322,6 +10407,15 @@ function requireClientH2 () {
 	  return result
 	}
 
+	/**
+	 * @param {import('node:http2').IncomingHttpHeaders} headers
+	 * @returns {Buffer[]}
+	 */
+	function parseH2ResponseHeaders (headers) {
+	  const { [HTTP2_HEADER_STATUS]: _statusCode, ...realHeaders } = headers;
+	  return parseH2Headers(realHeaders)
+	}
+
 	async function connectH2 (client, socket) {
 	  client[kSocket] = socket;
 
@@ -10371,8 +10465,6 @@ function requireClientH2 () {
 	  socket[kHTTP2Session] = session;
 
 	  util.addListener(socket, 'error', function (err) {
-	    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	    this[kError] = err;
 
 	    this[kClient][kOnError](err);
@@ -10446,8 +10538,6 @@ function requireClientH2 () {
 	}
 
 	function onHttp2SessionError (err) {
-	  assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	  this[kSocket][kError] = err;
 	  this[kClient][kOnError](err);
 	}
@@ -10542,22 +10632,32 @@ function requireClientH2 () {
 	  headers[HTTP2_HEADER_AUTHORITY] = host || `${hostname}${port ? `:${port}` : ''}`;
 	  headers[HTTP2_HEADER_METHOD] = method;
 
-	  const abort = (err) => {
-	    if (request.aborted || request.completed) {
+	  /**
+	   * @param {Error} [error]
+	   */
+	  const abort = (error) => {
+	    if (request.aborted) {
 	      return
 	    }
 
-	    err = err || new RequestAbortedError();
+	    if (request.completed) {
+	      if (method === 'CONNECT' && stream != null) {
+	        util.destroy(stream, error || new RequestAbortedError());
+	      }
+	      return
+	    }
 
-	    util.errorRequest(client, request, err);
+	    error = error || new RequestAbortedError();
+
+	    util.errorRequest(client, request, error);
 
 	    if (stream != null) {
-	      util.destroy(stream, err);
+	      util.destroy(stream, error);
 	    }
 
 	    // We do not destroy the socket as we can continue using the session
 	    // the stream get's destroyed and the session remains to create new streams
-	    util.destroy(body, err);
+	    util.destroy(body, error);
 	    client[kQueue][client[kRunningIdx]++] = null;
 	    client[kResume]();
 	  };
@@ -10576,25 +10676,57 @@ function requireClientH2 () {
 
 	  if (method === 'CONNECT') {
 	    session.ref();
-	    // We are already connected, streams are pending, first request
-	    // will create a new stream. We trigger a request to create the stream and wait until
-	    // `ready` event is triggered
 	    // We disabled endStream to allow the user to write to the stream
 	    stream = session.request(headers, { endStream: false, signal });
+	    let upgradeResponseFinished = false;
 
-	    if (stream.id && !stream.pending) {
-	      request.onUpgrade(null, null, stream);
-	      ++session[kOpenStreams];
-	      client[kQueue][client[kRunningIdx]++] = null;
-	    } else {
-	      stream.once('ready', () => {
+	    /**
+	     * @param {import('node:http2').IncomingHttpHeaders} headers
+	     */
+	    const onResponse = (headers) => {
+	      upgradeResponseFinished = true;
+	      stream.off(errorMonitor, onUpgradeError);
+	      request.onUpgradeResponse(Number(headers[HTTP2_HEADER_STATUS]), headers, parseH2ResponseHeaders);
+	    };
+
+	    /**
+	     * @param {Error} error
+	     */
+	    const onUpgradeError = (error) => {
+	      upgradeResponseFinished = true;
+	      stream.off('response', onResponse);
+	      request.onUpgradeError(error);
+	    };
+
+	    const onReady = () => {
+	      try {
 	        request.onUpgrade(null, null, stream);
-	        ++session[kOpenStreams];
-	        client[kQueue][client[kRunningIdx]++] = null;
-	      });
-	    }
+	      } catch (error) {
+	        stream.off('response', onResponse);
+	        abort(error);
+	        return
+	      }
+
+	      if (request.aborted) {
+	        return
+	      }
+
+	      stream.off('error', abort);
+	      stream.once(errorMonitor, onUpgradeError);
+	      client[kQueue][client[kRunningIdx]++] = null;
+	    };
+
+	    stream.once('response', onResponse);
+	    stream.once('error', abort);
+	    ++session[kOpenStreams];
+	    onReady();
 
 	    stream.once('close', () => {
+	      if (!upgradeResponseFinished && request.completed) {
+	        stream.off('response', onResponse);
+	        stream.off(errorMonitor, onUpgradeError);
+	        request.onUpgradeError(new InformationalError(`HTTP/2: "stream error" received - code ${stream.rstCode}`));
+	      }
 	      session[kOpenStreams] -= 1;
 	      if (session[kOpenStreams] === 0) session.unref();
 	    });
@@ -11353,9 +11485,10 @@ function requireClient () {
 	    // h2
 	    maxConcurrentStreams,
 	    allowH2,
-	    webSocket
+	    webSocket,
+	    eventSource
 	  } = {}) {
-	    super({ webSocket });
+	    super({ webSocket, eventSource });
 
 	    if (keepAlive !== undefined) {
 	      throw new InvalidArgumentError('unsupported keepAlive, use pipelining=0 instead')
@@ -12600,7 +12733,7 @@ function requireAgent () {
 	}
 
 	class Agent extends DispatcherBase {
-	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
+	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, tls, ...options } = {}) {
 	    if (typeof factory !== 'function') {
 	      throw new InvalidArgumentError('factory must be a function.')
 	    }
@@ -12619,11 +12752,15 @@ function requireAgent () {
 	      connect = { ...connect };
 	    }
 
+	    if (tls && typeof tls !== 'function') {
+	      tls = { ...tls };
+	    }
+
 	    this[kInterceptors] = options.interceptors?.Agent && Array.isArray(options.interceptors.Agent)
 	      ? options.interceptors.Agent
 	      : [createRedirectInterceptor({ maxRedirections })];
 
-	    this[kOptions] = { ...util.deepClone(options), connect };
+	    this[kOptions] = { ...util.deepClone(options), connect, tls };
 	    this[kOptions].interceptors = options.interceptors
 	      ? { ...options.interceptors }
 	      : undefined;
@@ -13369,7 +13506,10 @@ function requireRetryHandler () {
 	    this.retryCount += 1;
 
 	    if (statusCode >= 300) {
-	      if (this.retryOpts.statusCodes.includes(statusCode) === false) {
+	      // Only expose a response if no earlier attempt has reached the caller.
+	      // Otherwise abort this attempt so the error settles the existing body
+	      // instead of replacing it with a new response.
+	      if (!this.headersSent && this.retryOpts.statusCodes.includes(statusCode) === false) {
 	        this.headersSent = true;
 	        this.checkpointResponseEnd(headers, resume);
 	        return this.handler.onHeaders(
@@ -21163,8 +21303,10 @@ function requireFetch () {
 	  // 19. Run these steps in parallel:
 
 	  //    1. Run these steps, but abort when fetchParams is canceled:
-	  fetchParams.controller.onAborted = onAborted;
-	  fetchParams.controller.on('terminated', onAborted);
+	  if (!fetchParams.controller.resume) {
+	    fetchParams.controller.on('terminated', onAborted);
+	  }
+
 	  fetchParams.controller.resume = async () => {
 	    // 1. While true
 	    while (true) {
@@ -21333,8 +21475,6 @@ function requireFetch () {
 	          }
 	          location = headersList.get('location', true);
 
-	          this.body = new Readable({ read: resume });
-
 	          const decoders = [];
 
 	          const willFollow = location && request.redirect === 'follow' &&
@@ -21352,7 +21492,7 @@ function requireFetch () {
 	            // CVE fix similar to urllib3 (GHSA-gm62-xv2j-4w53) and curl (CVE-2022-32206).
 	            const maxContentEncodings = 5;
 	            if (codings.length > maxContentEncodings) {
-	              reject(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
+	              this.abort(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
 	              return true
 	            }
 
@@ -21384,6 +21524,8 @@ function requireFetch () {
 	              }
 	            }
 	          }
+
+	          this.body = new Readable({ read: resume });
 
 	          const onError = this.onError.bind(this);
 
@@ -21429,10 +21571,6 @@ function requireFetch () {
 	        onComplete () {
 	          if (this.abort) {
 	            fetchParams.controller.off('terminated', this.abort);
-	          }
-
-	          if (fetchParams.controller.onAborted) {
-	            fetchParams.controller.off('terminated', fetchParams.controller.onAborted);
 	          }
 
 	          fetchParams.controller.ended = true;
@@ -26232,6 +26370,20 @@ function requireReceiver () {
 	        if (isControlFrame(this.#info.opcode)) {
 	          this.#loop = this.parseControlFrame(body);
 	          this.#state = parserStates.INFO;
+
+	          // If the automatic PONG/CLOSE reply filled the socket's write buffer,
+	          // stop parsing and resume on drain so a PING flood cannot grow the
+	          // outbound queue without bound.
+	          const socket = this.ws[kResponse].socket;
+	          if (this.#loop && socket.writableNeedDrain) {
+	            this.#loop = false;
+	            socket.once('drain', () => {
+	              if (this.destroyed) return
+	              this.#loop = true;
+	              this.run(callback);
+	            });
+	            return
+	          }
 	        } else {
 	          if (!this.#info.compressed) {
 	            if (!this.writeFragments(body)) {
@@ -27263,6 +27415,7 @@ var hasRequiredEventsourceStream;
 function requireEventsourceStream () {
 	if (hasRequiredEventsourceStream) return eventsourceStream;
 	hasRequiredEventsourceStream = 1;
+	const buffer = require$$0$1;
 	const { Transform } = require$$0$3;
 	const { isASCIINumber, isValidLastEventId } = requireUtil();
 
@@ -27287,10 +27440,18 @@ function requireEventsourceStream () {
 	 */
 	const SPACE = 0x20;
 
+	const defaultMaxEventSize = buffer.kStringMaxLength;
+
 	const DATA = Buffer.from('data');
 	const EVENT = Buffer.from('event');
 	const ID = Buffer.from('id');
 	const RETRY = Buffer.from('retry');
+
+	// Each data field creates a string node, and each unconsumed input chunk keeps
+	// a Buffer wrapper. The absolute ceiling protects the large default byte limit.
+	const minParserItems = 1024;
+	const maxParserItems = 131072;
+	const bytesPerParserItem = 128;
 
 	function isASCIINumberBytes (buffer, start) {
 	  if (start >= buffer.length) {
@@ -27328,6 +27489,12 @@ function requireEventsourceStream () {
 	  }
 
 	  return true
+	}
+
+	function createMaxEventSizeExceededError () {
+	  const error = new Error('EventSource message size exceeded');
+	  error.aborted = false;
+	  return error
 	}
 
 	/**
@@ -27378,6 +27545,13 @@ function requireEventsourceStream () {
 	  pos = 0
 	  lineChunkIndex = 0
 	  linePos = 0
+	  lineLength = 0
+	  eventSize = 0
+	  eventFieldSizes = { data: 0, event: 0, id: 0, retry: 0 }
+	  dataLineCount = 0
+	  maxEventSize
+	  maxDataLines
+	  maxBufferedChunks
 
 	  event = {
 	    data: undefined,
@@ -27388,6 +27562,7 @@ function requireEventsourceStream () {
 
 	  /**
 	   * @param {object} options
+	   * @param {number} [options.maxEventSize]
 	   * @param {eventSourceSettings} options.eventSourceSettings
 	   * @param {Function} [options.push]
 	   */
@@ -27399,6 +27574,12 @@ function requireEventsourceStream () {
 	    super(options);
 
 	    this.state = options.eventSourceSettings || {};
+	    this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize;
+	    const parserItemLimit = this.maxEventSize > 0
+	      ? Math.min(maxParserItems, Math.max(minParserItems, Math.floor(this.maxEventSize / bytesPerParserItem)))
+	      : 0;
+	    this.maxDataLines = parserItemLimit;
+	    this.maxBufferedChunks = parserItemLimit;
 	    if (options.push) {
 	      this.push = options.push;
 	    }
@@ -27416,6 +27597,14 @@ function requireEventsourceStream () {
 	      return
 	    }
 
+	    // A leading line ending can immediately release the currently buffered
+	    // line, even when it uses the final allowed chunk slot.
+	    if (this.maxEventSize > 0 &&
+	        this.chunks.length >= this.maxBufferedChunks &&
+	        chunk[0] !== LF && chunk[0] !== CR) {
+	      callback(createMaxEventSizeExceededError());
+	      return
+	    }
 	    this.chunks.push(chunk);
 
 	    // Strip leading byte-order-mark if we opened the stream and started
@@ -27494,7 +27683,12 @@ function requireEventsourceStream () {
 
 	        // In any case, we can process the line as we reached an
 	        // end-of-line character
-	        this.parseLine(this.readLine(), this.event);
+	        try {
+	          this.parseLine(this.readLine(), this.event);
+	        } catch (error) {
+	          callback(error);
+	          return
+	        }
 	        this.consumeCurrentByte();
 	        // A line was processed and this could be the end of the event. We need
 	        // to check if the next line is empty to determine if the event is
@@ -27503,15 +27697,28 @@ function requireEventsourceStream () {
 	        continue
 	      }
 
+	      // readLine() is only called after CR or LF. Reject an unfinished line
+	      // before it can retain an unbounded number of decoded chunks. The seven
+	      // extra bytes allow the longest field prefix ("event: " or "retry: ").
+	      if (this.maxEventSize > 0 && ++this.lineLength > this.maxEventSize + 7) {
+	        callback(createMaxEventSizeExceededError());
+	        return
+	      }
 	      this.advanceCursor();
 	    }
 
 	    callback();
 	  }
 
+	  _destroy (error, callback) {
+	    this.chunks.length = 0;
+	    this.clearEvent();
+	    super._destroy(error, callback);
+	  }
+
 	  /**
 	   * @param {Buffer} line
-	   * @param {EventStreamEvent} event
+	   * @param {EventSourceStreamEvent} event
 	   */
 	  parseLine (line, event) {
 	    // If the line is empty (a blank line)
@@ -27545,6 +27752,13 @@ function requireEventsourceStream () {
 	    }
 
 	    if (isFieldName(line, fieldLength, DATA)) {
+	      if (this.maxEventSize > 0 && this.dataLineCount >= this.maxDataLines) {
+	        throw createMaxEventSizeExceededError()
+	      }
+	      const valueBytes = line.length - valueStart;
+	      const dataSize = this.eventFieldSizes.data + (event.data === undefined ? 0 : 1) + valueBytes;
+	      this.setEventFieldSize('data', dataSize);
+
 	      const value = line.toString('utf8', valueStart);
 
 	      if (event.data === undefined) {
@@ -27552,11 +27766,13 @@ function requireEventsourceStream () {
 	      } else {
 	        event.data += `\n${value}`;
 	      }
+	      this.dataLineCount++;
 	      return
 	    }
 
 	    if (isFieldName(line, fieldLength, RETRY)) {
 	      if (isASCIINumberBytes(line, valueStart)) {
+	        this.setEventFieldSize('retry', line.length - valueStart);
 	        event.retry = line.toString('utf8', valueStart);
 	      }
 	      return
@@ -27564,18 +27780,27 @@ function requireEventsourceStream () {
 
 	    if (isFieldName(line, fieldLength, ID)) {
 	      if (isValidLastEventIdBytes(line, valueStart)) {
+	        this.setEventFieldSize('id', line.length - valueStart);
 	        event.id = line.toString('utf8', valueStart);
 	      }
 	      return
 	    }
 
 	    if (isFieldName(line, fieldLength, EVENT)) {
-	      const value = line.toString('utf8', valueStart);
-
-	      if (value.length > 0) {
-	        event.event = value;
+	      if (valueStart < line.length) {
+	        this.setEventFieldSize('event', line.length - valueStart);
+	        event.event = line.toString('utf8', valueStart);
 	      }
 	    }
+	  }
+
+	  setEventFieldSize (field, size) {
+	    const eventSize = this.eventSize - this.eventFieldSizes[field] + size;
+	    if (this.maxEventSize > 0 && eventSize > this.maxEventSize) {
+	      throw createMaxEventSizeExceededError()
+	    }
+	    this.eventSize = eventSize;
+	    this.eventFieldSizes[field] = size;
 	  }
 
 	  /**
@@ -27608,6 +27833,12 @@ function requireEventsourceStream () {
 	    this.event.event = undefined;
 	    this.event.id = undefined;
 	    this.event.retry = undefined;
+	    this.eventSize = 0;
+	    this.dataLineCount = 0;
+	    this.eventFieldSizes.data = 0;
+	    this.eventFieldSizes.event = 0;
+	    this.eventFieldSizes.id = 0;
+	    this.eventFieldSizes.retry = 0;
 	  }
 
 	  hasPendingEvent () {
@@ -27643,14 +27874,16 @@ function requireEventsourceStream () {
 	  syncLineStartToCursor () {
 	    this.lineChunkIndex = this.chunkIndex;
 	    this.linePos = this.pos;
+	    this.lineLength = 0;
 	    this.dropConsumedChunks();
 	  }
 
 	  dropConsumedChunks () {
-	    while (this.lineChunkIndex > 0) {
-	      this.chunks.shift();
-	      this.lineChunkIndex--;
-	      this.chunkIndex--;
+	    if (this.lineChunkIndex > 0) {
+	      const consumed = this.lineChunkIndex;
+	      this.chunks.splice(0, consumed);
+	      this.lineChunkIndex = 0;
+	      this.chunkIndex -= consumed;
 	    }
 
 	    if (this.chunkIndex === this.chunks.length) {
@@ -27776,6 +28009,7 @@ function requireEventsource () {
 	const { delay } = requireUtil();
 	const { kEnumerableProperty } = requireUtil$7();
 	const { environmentSettingsObject } = requireUtil$6();
+	const { getGlobalDispatcher } = requireGlobal();
 
 	let experimentalWarned = false;
 
@@ -28057,6 +28291,7 @@ function requireEventsource () {
 
 	      const eventSourceStream = new EventSourceStream({
 	        eventSourceSettings: this.#state,
+	        maxEventSize: this.#dispatcher.eventSourceOptions?.maxEventSize,
 	        push: (event) => {
 	          this.dispatchEvent(createFastMessageEvent(
 	            event.type,
@@ -28235,7 +28470,8 @@ function requireEventsource () {
 	  },
 	  {
 	    key: 'dispatcher', // undici only
-	    converter: webidl.converters.any
+	    converter: webidl.converters.any,
+	    defaultValue: () => getGlobalDispatcher()
 	  }
 	]);
 
@@ -30318,6 +30554,35 @@ function requireConstants () {
 	// the shortest version with a build 0.0.0+BUILD.
 	const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6;
 
+	// ECMAScript whitespace and line terminators matched by \s.
+	const WHITESPACE_CHARACTERS = [
+	  '\t',
+	  '\n',
+	  '\v',
+	  '\f',
+	  '\r',
+	  ' ',
+	  '\u00a0',
+	  '\u1680',
+	  '\u2000',
+	  '\u2001',
+	  '\u2002',
+	  '\u2003',
+	  '\u2004',
+	  '\u2005',
+	  '\u2006',
+	  '\u2007',
+	  '\u2008',
+	  '\u2009',
+	  '\u200a',
+	  '\u2028',
+	  '\u2029',
+	  '\u202f',
+	  '\u205f',
+	  '\u3000',
+	  '\ufeff',
+	];
+
 	const RELEASE_TYPES = [
 	  'major',
 	  'premajor',
@@ -30333,6 +30598,7 @@ function requireConstants () {
 	  MAX_SAFE_COMPONENT_LENGTH,
 	  MAX_SAFE_BUILD_LENGTH,
 	  MAX_SAFE_INTEGER,
+	  WHITESPACE_CHARACTERS,
 	  RELEASE_TYPES,
 	  SEMVER_SPEC_VERSION,
 	  FLAG_INCLUDE_PRERELEASE: 0b001,
@@ -31622,6 +31888,451 @@ function requireLrucache () {
 	return lrucache;
 }
 
+var trimComparatorWhitespace_1;
+var hasRequiredTrimComparatorWhitespace;
+
+function requireTrimComparatorWhitespace () {
+	if (hasRequiredTrimComparatorWhitespace) return trimComparatorWhitespace_1;
+	hasRequiredTrimComparatorWhitespace = 1;
+
+	// Reproduce safeRe[COMPARATORTRIM] replacement boundaries, not version
+	// validation. Each end-index finder returns an exclusive end, or its start
+	// on no match.
+	// Positions count from zero. An end of 3 means characters 0, 1, and 2 were read;
+	// range.slice(start, end) gives the matched text, not a converted number.
+	const {
+	  MAX_LENGTH,
+	  MAX_SAFE_BUILD_LENGTH,
+	  WHITESPACE_CHARACTERS,
+	} = requireConstants();
+
+	/**
+	 * Remembers the last two rows of digits so their characters need not be reread.
+	 * Positions start at -1 until a row has been found.
+	 *
+	 * @typedef {object} DigitRunCache
+	 * @property {number} start The first character of the most recently found row.
+	 * @property {number} end The position after that row's last character.
+	 * @property {number} previousStart The first character of the previous row.
+	 * @property {number} previousEnd The position after the previous row.
+	 */
+
+	// One entry per UTF-16 code unit keeps membership checks constant-time.
+	const whitespace = new Uint8Array(0x10000);
+	for (const char of WHITESPACE_CHARACTERS) {
+	  whitespace[char.charCodeAt(0)] = 1;
+	}
+
+	/**
+	 * Checks whether a character is whitespace, like a space, tab, or newline.
+	 * Looking past the end of the string returns false.
+	 *
+	 * @param {string|undefined} char One character, or undefined past the string's end.
+	 * @returns {boolean} Whether the character is whitespace.
+	 * @example isWhitespace(' ') // true
+	 * @example isWhitespace('1') // false
+	 */
+	const isWhitespace = char =>
+	  char !== undefined && whitespace[char.charCodeAt(0)] === 1;
+
+	/**
+	 * Checks for v, =, or whitespace before the version number.
+	 * These are historical version prefixes, not range operators:
+	 * < and > are handled separately, as are tilde and caret ranges.
+	 *
+	 * @param {string|undefined} char One character to check.
+	 * @returns {boolean} Whether the character can belong to a version prefix.
+	 * @example isVersionPrefix('=') // true
+	 * @example isVersionPrefix('>') // false
+	 */
+	const isVersionPrefix = char =>
+	  char === 'v' ||
+	  char === '=' ||
+	  isWhitespace(char);
+
+	/**
+	 * Checks whether a character is one of the digits 0 through 9.
+	 *
+	 * @param {string|undefined} char One character to check.
+	 * @returns {boolean} Whether the character is an ASCII digit.
+	 * @example isDigit('7') // true
+	 * @example isDigit('.') // false
+	 */
+	const isDigit = char => char !== undefined && char >= '0' && char <= '9';
+
+	/**
+	 * Checks whether a character is an English letter, uppercase or lowercase.
+	 *
+	 * @param {string|undefined} char One character to check.
+	 * @returns {boolean} Whether the character is an ASCII letter.
+	 * @example isLetter('b') // true
+	 * @example isLetter('7') // false
+	 */
+	const isLetter = char =>
+	  char !== undefined && (
+	    (char >= 'a' && char <= 'z') ||
+	    (char >= 'A' && char <= 'Z')
+	  );
+
+	/**
+	 * Checks for a letter, digit, or hyphen: the characters allowed inside
+	 * prerelease and build names such as beta-1.
+	 *
+	 * @param {string|undefined} char One character to check.
+	 * @returns {boolean} Whether the character can be part of an identifier.
+	 * @example isIdentifierCharacter('-') // true
+	 * @example isIdentifierCharacter('.') // false; dots separate identifiers
+	 */
+	const isIdentifierCharacter = char => isDigit(char) || isLetter(char) || char === '-';
+
+	/**
+	 * Checks whether a version component can begin here: with a digit or
+	 * a wildcard such as x, X, or *.
+	 *
+	 * @param {string|undefined} char One character to check.
+	 * @returns {boolean} Whether a number or wildcard can start with this character.
+	 * @example isVersionStart('x') // true
+	 * @example isVersionStart('v') // false; v belongs to the prefix
+	 */
+	const isVersionStart = char =>
+	  isDigit(char) ||
+	  char === 'x' ||
+	  char === 'X' ||
+	  char === '*';
+
+	/**
+	 * Finds the end of a row of digits, but returns no more than limit digits.
+	 * Remembers the last two rows so looking at them again does not reread them.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position of the first character to check.
+	 * @param {number} limit The most digit characters the returned match can include.
+	 * @param {DigitRunCache} digitRuns Shared cache of digit-run positions, updated in place.
+	 * @returns {number} The position after the matched digits, or start if none match.
+	 * @example findDigitsEndIndex('123abc', 0, 10, digitRuns) // 3, pointing at a
+	 * @example findDigitsEndIndex('123abc', 0, 2, digitRuns) // 2, pointing at the unread 3
+	 */
+	const findDigitsEndIndex = (range, start, limit, digitRuns) => {
+	  if (!isDigit(range[start])) {
+	    return start
+	  }
+	  if (start >= digitRuns.start && start < digitRuns.end) {
+	    return Math.min(start + limit, digitRuns.end)
+	  }
+	  if (start >= digitRuns.previousStart && start < digitRuns.previousEnd) {
+	    return Math.min(start + limit, digitRuns.previousEnd)
+	  }
+	  let end = start + 1;
+	  while (isDigit(range[end])) {
+	    end++;
+	  }
+	  // A failed full version can rewind from its second run to its first.
+	  digitRuns.previousStart = digitRuns.start;
+	  digitRuns.previousEnd = digitRuns.end;
+	  digitRuns.start = start;
+	  digitRuns.end = end;
+	  return Math.min(start + limit, end)
+	};
+
+	/**
+	 * Reads a number using the old regex's length and leading-zero rules.
+	 * Strict mode reads just the first zero in 012; loose mode can read all three.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position where the number should begin.
+	 * @param {boolean} loose Whether to allow leading zeros.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position after the matched digits, not their numeric value.
+	 * @example findVersionNumberEndIndex('012', 0, false, digitRuns) // 1
+	 * @example findVersionNumberEndIndex('012', 0, true, digitRuns) // 3
+	 */
+	const findVersionNumberEndIndex = (range, start, loose, digitRuns) => {
+	  if (!loose && range[start] === '0') {
+	    return start + 1
+	  }
+	  // Strict syntax allows an initial nonzero digit plus MAX_LENGTH digits.
+	  return findDigitsEndIndex(range, start, loose ? MAX_LENGTH : MAX_LENGTH + 1, digitRuns)
+	};
+
+	/**
+	 * Reads one piece of a prerelease name, such as beta or 1 in beta.1.
+	 * Tries the letter-or-hyphen form first, then the number-only form.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position where the identifier should begin.
+	 * @param {boolean} loose Whether numeric identifiers may have leading zeros.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position after the identifier, or start if none matches.
+	 * @example findPrereleaseIdentifierEndIndex('beta.1', 0, false, digitRuns) // 4, at the dot
+	 * @example findPrereleaseIdentifierEndIndex('001beta', 0, false, digitRuns) // 7
+	 */
+	const findPrereleaseIdentifierEndIndex = (range, start, loose, digitRuns) => {
+	  const digitsEnd = findDigitsEndIndex(range, start, MAX_LENGTH, digitRuns);
+	  // The legacy regex tries a nonnumeric identifier before a numeric one.
+	  if (isLetter(range[digitsEnd]) || range[digitsEnd] === '-') {
+	    let end = digitsEnd + 1;
+	    const limit = end + MAX_SAFE_BUILD_LENGTH;
+	    while (end < limit && isIdentifierCharacter(range[end])) {
+	      end++;
+	    }
+	    return end
+	  }
+	  return findVersionNumberEndIndex(range, start, loose, digitRuns)
+	};
+
+	/**
+	 * Reads a prerelease suffix such as -beta.1, one dot-separated piece at a time.
+	 * Loose mode also allows the name without its opening hyphen.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position where the suffix should begin, including -.
+	 * @param {boolean} loose Whether the opening hyphen is optional and zeros allowed.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position after the matched suffix, or start if absent.
+	 * @example findPrereleaseEndIndex('-beta.1+sha', 0, false, digitRuns) // 7, at the plus
+	 * @example findPrereleaseEndIndex('beta', 0, false, digitRuns) // 0; no opening hyphen
+	 */
+	const findPrereleaseEndIndex = (range, start, loose, digitRuns) => {
+	  const hyphen = range[start] === '-';
+	  if (!loose && !hyphen) {
+	    return start
+	  }
+	  const identifierStart = start + (hyphen ? 1 : 0);
+	  let end = findPrereleaseIdentifierEndIndex(range, identifierStart, loose, digitRuns);
+	  if (end === identifierStart) {
+	    if (!loose || !hyphen) {
+	      return start
+	    }
+	    // In loose syntax, a lone hyphen can itself be the identifier.
+	    end = findPrereleaseIdentifierEndIndex(range, start, loose, digitRuns);
+	  }
+	  while (range[end] === '.') {
+	    const next = findPrereleaseIdentifierEndIndex(range, end + 1, loose, digitRuns);
+	    if (next === end + 1) {
+	      break
+	    }
+	    end = next;
+	  }
+	  return end
+	};
+
+	/**
+	 * Reads one build-name piece, such as sha or 123 in +sha.123.
+	 * Stops at a disallowed character or the old regex's length limit.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position where the identifier should begin.
+	 * @returns {number} The position after the identifier, or start if none matches.
+	 * @example findBuildIdentifierEndIndex('sha.123', 0) // 3, at the dot
+	 * @example findBuildIdentifierEndIndex('001', 0) // 3; leading zeros are allowed
+	 */
+	const findBuildIdentifierEndIndex = (range, start) => {
+	  let end = start;
+	  while (end - start < MAX_SAFE_BUILD_LENGTH && isIdentifierCharacter(range[end])) {
+	    end++;
+	  }
+	  return end
+	};
+
+	/**
+	 * Reads optional build metadata such as +sha.123.
+	 * Leaves the position unchanged if there is no plus sign followed by a name.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position where the opening + should be.
+	 * @returns {number} The position after the matched metadata, or start if absent.
+	 * @example findBuildEndIndex('+sha.123 <2', 0) // 8, at the space
+	 * @example findBuildEndIndex('+', 0) // 0; a plus sign alone is not a match
+	 */
+	const findBuildEndIndex = (range, start) => {
+	  if (range[start] !== '+') {
+	    return start
+	  }
+	  let end = findBuildIdentifierEndIndex(range, start + 1);
+	  if (end === start + 1) {
+	    return start
+	  }
+	  while (range[end] === '.') {
+	    const next = findBuildIdentifierEndIndex(range, end + 1);
+	    if (next === end + 1) {
+	      break
+	    }
+	    end = next;
+	  }
+	  return end
+	};
+
+	/**
+	 * Reads three numbers separated by dots, then any prerelease and build suffixes.
+	 * Uses loose rules, so forms such as 01.02.03beta can match here.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position of the first number, after any prefix.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position after the version match, or start if none matches.
+	 * @example findLooseFullVersionEndIndex('1.2.3-beta+sha <2', 0, digitRuns) // 14
+	 * @example findLooseFullVersionEndIndex('1.2', 0, digitRuns) // 0; needs three numbers
+	 */
+	const findLooseFullVersionEndIndex = (range, start, digitRuns) => {
+	  let end = start;
+	  for (let component = 0; component < 3; component++) {
+	    const next = findVersionNumberEndIndex(range, end, true, digitRuns);
+	    if (next === end) {
+	      return start
+	    }
+	    end = next;
+	    if (component < 2) {
+	      if (range[end] !== '.') {
+	        return start
+	      }
+	      end++;
+	    }
+	  }
+	  const prereleaseEnd = findPrereleaseEndIndex(range, end, true, digitRuns);
+	  return findBuildEndIndex(range, prereleaseEnd)
+	};
+
+	/**
+	 * Reads one component of a partial or wildcard version, such as 2 or x in 2.x.
+	 * Numbers use strict leading-zero rules; wildcards take up one character.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position where the component should begin.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position after the component, or start if none matches.
+	 * @example findPartialVersionComponentEndIndex('2.x', 0, digitRuns) // 1, at the dot
+	 * @example findPartialVersionComponentEndIndex('2.x', 2, digitRuns) // 3, after x
+	 */
+	const findPartialVersionComponentEndIndex = (range, start, digitRuns) => {
+	  if (isDigit(range[start])) {
+	    return findVersionNumberEndIndex(range, start, false, digitRuns)
+	  }
+	  return isVersionStart(range[start]) ? start + 1 : start
+	};
+
+	/**
+	 * Reads up to three components, allowing forms such as 1, 1.2, or 1.x.
+	 * After the third component, also reads any strict prerelease and build suffixes.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position of a number or wildcard, after any prefix.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position after the matched version text.
+	 * @example findPartialVersionEndIndex('1.x <2', 0, digitRuns) // 3, at the space
+	 * @example findPartialVersionEndIndex('1.', 0, digitRuns) // 1; the trailing dot is unread
+	 */
+	const findPartialVersionEndIndex = (range, start, digitRuns) => {
+	  let end = findPartialVersionComponentEndIndex(range, start, digitRuns);
+	  for (let component = 0; component < 2; component++) {
+	    if (range[end] !== '.') {
+	      return end
+	    }
+	    const next = findPartialVersionComponentEndIndex(range, end + 1, digitRuns);
+	    if (next === end + 1) {
+	      return end
+	    }
+	    end = next;
+	  }
+	  const prereleaseEnd = findPrereleaseEndIndex(range, end, false, digitRuns);
+	  return findBuildEndIndex(range, prereleaseEnd)
+	};
+
+	/**
+	 * Finds where a version match ends, without deciding whether the range is valid.
+	 * Tries a loose full version first, then a partial or wildcard version, just
+	 * like the old regex's LOOSEPLAIN and XRANGEPLAIN alternatives.
+	 *
+	 * @param {string} range The text to read; it is not changed.
+	 * @param {number} start The position of a number or wildcard, after any prefix.
+	 * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
+	 * @returns {number} The position where scanning the next candidate can resume.
+	 * @example findVersionEndIndex('1.2.3 <2', 0, digitRuns) // 5, at the space
+	 * @example findVersionEndIndex('1.x <2', 0, digitRuns) // 3, at the space
+	 */
+	const findVersionEndIndex = (range, start, digitRuns) => {
+	  const fullVersionEnd = findLooseFullVersionEndIndex(range, start, digitRuns);
+	  return fullVersionEnd !== start
+	    ? fullVersionEnd
+	    : findPartialVersionEndIndex(range, start, digitRuns)
+	};
+
+	/**
+	 * Finds the one whitespace character the old replacement would remove.
+	 * Keeps leading whitespace, skips an optional operator, and checks immediately
+	 * after it. Returns -1 if there is nothing to remove.
+	 *
+	 * @param {string} range The text containing a candidate already found by the caller.
+	 * @param {number} matchStart The candidate's position, including leading whitespace.
+	 * @returns {number} The position of the removable whitespace, or -1 if absent.
+	 * @example findRemovableWhitespaceIndex(' > 1', 0) // 2; keep the space at position 0
+	 * @example findRemovableWhitespaceIndex('>1', 0) // -1
+	 */
+	const findRemovableWhitespaceIndex = (range, matchStart) => {
+	  let position = matchStart;
+	  if (isWhitespace(range[position])) {
+	    position++;
+	  }
+	  if (range[position] === '<' || range[position] === '>') {
+	    position++;
+	  }
+	  if (range[position] === '=') {
+	    position++;
+	  }
+	  return isWhitespace(range[position]) ? position : -1
+	};
+
+	/**
+	 * Joins an operator to its version, turning > 1.2.3 into >1.2.3.
+	 * Copies everything else according to the old regex's matching rules.
+	 * Moves forward through prefixes and whole versions to avoid repeatedly
+	 * searching the same characters on long inputs.
+	 *
+	 * @param {string} range The range text to process; the original string is unchanged.
+	 * @returns {string} The range with matched operator whitespace removed.
+	 * @example trimComparatorWhitespace('> 1.2.3 < 2') // '>1.2.3 <2'
+	 * @example trimComparatorWhitespace('> invalid') // '> invalid'
+	 */
+	const trimComparatorWhitespace = range => {
+	  let result = '';
+	  let copyFrom = 0;
+	  let cursor = 0;
+	  const digitRuns = { start: -1, end: -1, previousStart: -1, previousEnd: -1 };
+
+	  while (cursor < range.length) {
+	    const matchStart = cursor;
+	    if (range[cursor] === '<' || range[cursor] === '>') {
+	      cursor++;
+	    } else if (!isVersionPrefix(range[cursor]) && !isVersionStart(range[cursor])) {
+	      cursor++;
+	      continue
+	    }
+
+	    // Consume a v/=/whitespace run once, even when no version follows it.
+	    while (cursor < range.length && isVersionPrefix(range[cursor])) {
+	      cursor++;
+	    }
+	    if (!isVersionStart(range[cursor])) {
+	      continue
+	    }
+
+	    const whitespacePosition = findRemovableWhitespaceIndex(range, matchStart);
+	    if (whitespacePosition !== -1) {
+	      result += range.slice(copyFrom, whitespacePosition);
+	      copyFrom = whitespacePosition + 1;
+	    }
+
+	    // Skip the entire match, so a prerelease's trailing v cannot be
+	    // reconsidered as the prefix of another version.
+	    cursor = findVersionEndIndex(range, cursor, digitRuns);
+	  }
+
+	  return result + range.slice(copyFrom)
+	};
+
+	trimComparatorWhitespace_1 = trimComparatorWhitespace;
+	return trimComparatorWhitespace_1;
+}
+
 var range$2;
 var hasRequiredRange;
 
@@ -31748,7 +32459,7 @@ function requireRange () {
 	    debug('hyphen replace', range);
 
 	    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
-	    range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace);
+	    range = trimComparatorWhitespace(range);
 	    debug('comparator trim', range);
 
 	    // `~ 1.2.3` => `~1.2.3`
@@ -31853,11 +32564,11 @@ function requireRange () {
 	const Comparator = requireComparator();
 	const debug = requireDebug();
 	const SemVer = requireSemver$1();
+	const trimComparatorWhitespace = requireTrimComparatorWhitespace();
 	const {
 	  safeRe: re,
 	  src,
 	  t,
-	  comparatorTrimReplace,
 	  tildeTrimReplace,
 	  caretTrimReplace,
 	} = requireRe();
@@ -45432,9 +46143,9 @@ function readAttributeStr(xmlData, i) {
  * and moving to the next starting position — one full backtrack per
  * position, which is quadratic in the length of the run.
  *
- * A single forward-only scan can never backtrack, so it can't be made slow
- * this way no matter how much whitespace the input contains — it's always
- * proportional to the length of the string, once.
+ * The scan is forward-only: the cursor never moves backwards, so each
+ * character is visited a constant number of times and the cost is linear
+ * in the length of the string.
  *
  * Each returned token mirrors the shape the old regex match array had, so
  * the validation logic below (which reads token[1]..token[6]) didn't need
@@ -45466,8 +46177,7 @@ function scanAttributeTokens(attrStr) {
 
     if (attrStr[i] === '=') {
       // No name before this '=' — not a valid attribute start. Move past
-      // just this one character and try again from the next position.
-      i = tokenStart + 1;
+      i++;
       continue;
     }
 
@@ -47470,8 +48180,10 @@ function toNumber(str, options = {}) {
         return parse_int(trimmedStr, 2);
     } else if (options.octal && octRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 8);
-    } else if (!isFinite(trimmedStr)) { //Infinity
-        return handleInfinity(str, Number(trimmedStr), options);
+    } else if (!isFinite(trimmedStr)) { //Infinity or not a number
+        const num = Number(trimmedStr);
+        if (Number.isNaN(num)) return str; //not a number: always the original string
+        return handleInfinity(str, num, options); //only +/-Infinity reaches here
     } else if (trimmedStr.includes('e') || trimmedStr.includes('E')) { //eNotation
         return resolveEnotation(str, trimmedStr, options);
     } else {
@@ -47483,8 +48195,8 @@ function toNumber(str, options = {}) {
             const leadingZeros = match[2];
             let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
             const decimalAdjacentToLeadingZeros = sign ? // 0., -00., 000.
-                str[leadingZeros.length + 1] === "."
-                : str[leadingZeros.length] === ".";
+                trimmedStr[leadingZeros.length + 1] === "."
+                : trimmedStr[leadingZeros.length] === ".";
 
             //trim ending zeros for floating number
             if (!options.leadingZeros //leading zeros are not allowed
@@ -47532,8 +48244,8 @@ function resolveEnotation(str, trimmedStr, options) {
         const eChar = notation[3].indexOf("e") === -1 ? "E" : "e";
         const leadingZeros = notation[2];
         const eAdjacentToLeadingZeros = sign ? // 0E.
-            str[leadingZeros.length + 1] === eChar
-            : str[leadingZeros.length] === eChar;
+            trimmedStr[leadingZeros.length + 1] === eChar
+            : trimmedStr[leadingZeros.length] === eChar;
 
         if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str;
         else if (leadingZeros.length === 1
@@ -47542,8 +48254,7 @@ function resolveEnotation(str, trimmedStr, options) {
         } else if (leadingZeros.length > 0) {
             // Has leading zeros — only accept if leadingZeros option allows it
             if (options.leadingZeros && !eAdjacentToLeadingZeros) {
-                trimmedStr = (notation[1] || "") + notation[3];
-                return Number(trimmedStr);
+                return Number(trimmedStr); // Number() accepts leading zeros; stripping can leave a mantissa-less ".e0"
             } else return str;
         } else {
             // No leading zeros — always valid e-notation, parse it
@@ -49516,6 +50227,55 @@ const SQL_STRICT_EXTRA = [
 const SQL_STRICT_PATTERNS = [...SQL_PATTERNS, ...SQL_STRICT_EXTRA];
 
 /**
+ * Decode the HTML character references that matter for markup-context
+ * detection.
+ *
+ * Browsers decode character references in attribute values before they
+ * interpret a URL, so `javascript&#58;alert(1)` in an href is the
+ * `javascript:` scheme. The HTML/XML/SVG rules match literal characters, so
+ * without this step such payloads slip through.
+ *
+ * Deliberately NOT a full entity decoder. It decodes only:
+ *   - decimal refs  &#58;  &#058;  &#00000058;  &#58   (any leading zeros,
+ *                   trailing ; optional — browsers accept both)
+ *   - hex refs      &#x3a; &#X3A; &#x0000003a; &#x3a   (same)
+ *   - named refs    &colon;  &Tab;  &NewLine;
+ *       Named refs are CASE-SENSITIVE and REQUIRE the trailing ';', exactly
+ *       like a browser (so `&COLON;` and `&colon` are not decoded).
+ *       &Tab; / &NewLine; matter because the URL parser strips tab/newline,
+ *       so `java&Tab;script:` is still a javascript: URL.
+ *
+ * It does NOT decode &amp; (single pass only), so double-encoded text such as
+ * "&amp;lt;script&amp;gt;" stays literal — a browser renders that as text.
+ *
+ * All quantifiers are bounded; no ReDoS risk.
+ *
+ * @param {string} input
+ * @returns {string}
+ */
+const NAMED = Object.freeze({
+  colon: ':',
+  Tab: '\t',
+  NewLine: '\n',
+});
+
+const ENTITY_RE =
+  /&(?:#[xX]0*([0-9a-fA-F]{1,6});?|#0*([0-9]{1,7});?|([a-zA-Z][a-zA-Z0-9]{1,15});)/g;
+
+function decodeEntities(input) {
+  if (input.indexOf('&') === -1) return input;
+
+  return input.replace(ENTITY_RE, (match, hex, dec, name) => {
+    if (name !== undefined) {
+      return Object.prototype.hasOwnProperty.call(NAMED, name) ? NAMED[name] : match;
+    }
+    const cp = hex !== undefined ? parseInt(hex, 16) : parseInt(dec, 10);
+    if (!Number.isFinite(cp) || cp > 0x10ffff) return match;
+    return String.fromCodePoint(cp);
+  });
+}
+
+/**
  * is-unsafe v2
  *
  * Zero-dependency, DOM-free, pure predicate for detecting unsafe strings
@@ -49537,6 +50297,12 @@ const SQL_STRICT_PATTERNS = [...SQL_PATTERNS, ...SQL_STRICT_EXTRA];
 HTML_PATTERNS.label       = 'HTML';
 XML_PATTERNS.label        = 'XML';
 SVG_PATTERNS.label        = 'SVG';
+
+// Markup contexts: also test an entity-decoded copy (see util/decode-entities.js).
+// Non-markup contexts (SQL, SHELL, LOG, …) are matched byte-for-byte as supplied.
+HTML_PATTERNS.decodeEntities = true;
+XML_PATTERNS.decodeEntities  = true;
+SVG_PATTERNS.decodeEntities  = true;
 SQL_PATTERNS.label        = 'SQL';
 SQL_STRICT_PATTERNS.label = 'SQL-STRICT';
 SHELL_PATTERNS.label      = 'SHELL';
@@ -49620,6 +50386,20 @@ function normalise(context) {
 }
 
 /**
+ * For markup contexts, return an entity-decoded copy of `value` to test
+ * alongside the raw input, or null when there is nothing extra to test.
+ *
+ * @param {string} value
+ * @param {Rule[]} list
+ * @returns {string|null}
+ */
+function decodedCopy(value, list) {
+  if (!list.decodeEntities) return null;
+  const decoded = decodeEntities(value);
+  return decoded === value ? null : decoded;
+}
+
+/**
  * Test value against a single PatternList. Returns the first MatchResult or null.
  *
  * @param {string} value
@@ -49628,8 +50408,9 @@ function normalise(context) {
  */
 function matchList(value, list) {
   const label = list.label ?? 'CUSTOM';
+  const decoded = decodedCopy(value, list);
   for (const rule of list) {
-    if (rule.pattern.test(value)) {
+    if (rule.pattern.test(value) || (decoded !== null && rule.pattern.test(decoded))) {
       return { context: label, id: rule.id, description: rule.description, pattern: rule.pattern };
     }
   }
@@ -49854,7 +50635,14 @@ function resolveNameSpace(tagname) {
 
 //TODO: change regex to capture NS
 //const attrsRegx = new RegExp("([\\w\\-\\.\\:]+)\\s*=\\s*(['\"])((.|\n)*?)\\2","gm");
-const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])([\\s\\S]*?)\\3)?', 'gm');
+// The value is matched with a negated class per quote type rather than a lazy `[\s\S]*?` up to a
+// backreference, which is much slower on long values (SVG paths, data URIs)
+const attrsRegx = /([^\s=]+)\s*(=\s*(?:"([^"]*)"|'([^']*)'))?/gm;
+
+// value inside double quotes, or inside single quotes, or undefined when there is no value
+function attrValue(match) {
+  return match[3] !== undefined ? match[3] : match[4];
+}
 
 function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   const options = this.options;
@@ -49874,7 +50662,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
 
     for (let i = 0; i < len; i++) {
       const attrName = this.resolveNameSpace(matches[i][1]);
-      const oldVal = matches[i][4];
+      const oldVal = attrValue(matches[i]);
 
       if (attrName.length && oldVal !== undefined) {
         let val = oldVal;
@@ -49910,7 +50698,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
         }
         aName = sanitizeName(aName, options);
 
-        if (matches[i][4] !== undefined) {
+        if (attrValue(matches[i]) !== undefined) {
           // Reuse already-processed value — no double entity replacement
           const oldVal = processedVals[i];
 
@@ -49941,7 +50729,15 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   }
 }
 const parseXml = function (xmlData) {
-  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
+  const options = this.options;
+  const crlfPositions = options.captureMetaData ? [] : undefined;
+  xmlData = xmlData.replace(/\r\n?/g, options.captureMetaData ? (newline, index) => {
+    if (newline.length === 2) {
+      // Store the position after earlier CRLF pairs have been normalized.
+      crlfPositions.push(index - crlfPositions.length);
+    }
+    return "\n";
+  } : "\n");
   const xmlObj = new XmlNode('!xml');
   let currentNode = xmlObj;
   let textData = "";
@@ -49954,7 +50750,6 @@ const parseXml = function (xmlData) {
   this.entityExpansionCount = 0;
   this.currentExpandedLength = 0;
   this.doctypefound = false;
-  const options = this.options;
   const docTypeReader = new DocTypeReader(options.processEntities);
   const xmlLen = xmlData.length;
   for (let i = 0; i < xmlLen; i++) {//for each char in XML data
@@ -49998,7 +50793,7 @@ const parseXml = function (xmlData) {
         currentNode = this.tagsNodeStack.pop() || xmlObj;//avoid recursion, set the parent tag scope
 
         if (options.captureMetaData && currentNode) {
-          currentNode.addEndIndex(closeIndex + 1);
+          currentNode.addEndIndex(getOriginalIndex(closeIndex + 1, crlfPositions));
         }
         textData = "";
         i = closeIndex;
@@ -50022,11 +50817,12 @@ const parseXml = function (xmlData) {
           if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent && options.ignoreAttributes !== true) {
             childNode[":@"] = attsMap;
           }
-          this.addChild(currentNode, childNode, this.readonlyMatcher, i);
+          const startIndex = options.captureMetaData ? getOriginalIndex(i, crlfPositions) : i;
+          this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
 
           if (options.captureMetaData) {
             // closeIndex points at '?' of the closing '?>'
-            currentNode.addEndIndex(tagData.closeIndex + 2);
+            currentNode.addEndIndex(getOriginalIndex(tagData.closeIndex + 2, crlfPositions));
           }
         }
 
@@ -50157,7 +50953,7 @@ const parseXml = function (xmlData) {
           this.isCurrentNodeStopNode = this.isItStopNode();
         }
 
-        const startIndex = i;
+        const startIndex = options.captureMetaData ? getOriginalIndex(i, crlfPositions) : i;
         if (this.isCurrentNodeStopNode) {
           let tagContent = "";
 
@@ -50193,7 +50989,7 @@ const parseXml = function (xmlData) {
           this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
 
           if (options.captureMetaData) {
-            currentNode.addEndIndex(i + 1);
+            currentNode.addEndIndex(getOriginalIndex(i + 1, crlfPositions));
           }
         } else {
           //selfClosing tag
@@ -50207,7 +51003,7 @@ const parseXml = function (xmlData) {
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
 
             if (options.captureMetaData) {
-              currentNode.addEndIndex(closeIndex + 1);
+              currentNode.addEndIndex(getOriginalIndex(closeIndex + 1, crlfPositions));
             }
             this.matcher.pop(); // Pop self-closing tag
             this.isCurrentNodeStopNode = false; // Reset flag
@@ -50220,7 +51016,7 @@ const parseXml = function (xmlData) {
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
 
             if (options.captureMetaData) {
-              currentNode.addEndIndex(result.closeIndex + 1);
+              currentNode.addEndIndex(getOriginalIndex(result.closeIndex + 1, crlfPositions));
             }
             this.matcher.pop(); // Pop unpaired tag
             this.isCurrentNodeStopNode = false; // Reset flag
@@ -50252,6 +51048,17 @@ const parseXml = function (xmlData) {
   }
   return xmlObj.child;
 };
+
+function getOriginalIndex(index, crlfPositions) {
+  let low = 0;
+  let high = crlfPositions.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (crlfPositions[middle] < index) low = middle + 1;
+    else high = middle;
+  }
+  return index + low;
+}
 
 function addChild(currentNode, childNode, matcher, startIndex) {
   // unset startIndex if not requested
@@ -50341,7 +51148,6 @@ function isItStopNode() {
 function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
   //TODO: ignore boolean attributes in tag expression
   //TODO: if ignore attributes, dont read full attribute expression but the end. But read for xml declaration
-  let attrBoundary = 0;
   const len = xmlData.length;
   const closeCode0 = closingChar.charCodeAt(0);
   const closeCode1 = closingChar.length > 1 ? closingChar.charCodeAt(1) : -1;
@@ -50352,10 +51158,10 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
   for (let index = i; index < len; index++) {
     const code = xmlData.charCodeAt(index);
 
-    if (attrBoundary) {
-      if (code === attrBoundary) attrBoundary = 0;
-    } else if (code === 34 || code === 39) { // " or '
-      attrBoundary = code;
+    if (code === 34 || code === 39) { // " or '
+      // Skip the quoted value in one step: nothing inside it can close the tag
+      index = xmlData.indexOf(xmlData[index], index + 1);
+      if (index === -1) return;
     } else if (code === closeCode0) {
       if (closeCode1 !== -1) {
         if (xmlData.charCodeAt(index + 1) === closeCode1) {
@@ -50366,7 +51172,7 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
         result += xmlData.substring(segmentStart, index);
         return { data: result, index };
       }
-    } else if (code === 9 && !attrBoundary) { // \t - only replace with space outside attribute values
+    } else if (code === 9) { // \t - only replace with space outside attribute values
       // Flush accumulated segment, add space, start new segment
       result += xmlData.substring(segmentStart, index) + ' ';
       segmentStart = index + 1;
@@ -50429,6 +51235,8 @@ function readStopNodeData(xmlData, tagName, i) {
   const startIndex = i;
   // Starting at 1 since we already have an open tag
   let openTagCount = 1;
+  let lenient = false; // set once a quote-aware tag scan fails
+  let nextGt = -1; // cached index of the next '>'
 
   const xmllen = xmlData.length;
   for (; i < xmllen; i++) {
@@ -50460,14 +51268,29 @@ function readStopNodeData(xmlData, tagName, i) {
         const closeIndex = findClosingIndex(xmlData, "]]>", i, "StopNode is not closed.") - 2;
         i = closeIndex;
       } else {
-        const tagData = readTagExp(xmlData, i, false);
+        const tagData = lenient ? undefined : readTagExp(xmlData, i, false);
 
         if (tagData) {
-          const openTagName = tagData && tagData.tagName;
+          const openTagName = tagData.tagName;
           if (openTagName === tagName && tagData.tagExp[tagData.tagExp.length - 1] !== "/") {
             openTagCount++;
           }
           i = tagData.closeIndex;
+        } else {
+          // no closing '>'. use lenient approach to find '<' instead of readTagExp, to avoid repeated rescans.
+          lenient = true;
+          if (nextGt < i) {
+            nextGt = xmlData.indexOf(">", i);
+            if (nextGt === -1) return; // no '>' left, so no closing tag can follow
+          }
+          const nextLt = xmlData.indexOf("<", i + 1);
+          if (nextLt === -1 || nextLt > nextGt) { // looks like a real tag
+            const exp = xmlData.substring(i + 1, nextGt);
+            const sep = exp.search(/\s/);
+            const name = sep === -1 ? exp : exp.substring(0, sep);
+            if (name === tagName && exp[exp.length - 1] !== "/") openTagCount++;
+            i = nextGt;
+          } // else: treat this '<' as plain text
         }
       }
     }
@@ -50686,6 +51509,8 @@ function isLeafTag(obj, options) {
   return false;
 }
 
+/* global Uint8Array */
+
 class XMLParser {
 
     constructor(options) {
@@ -50700,7 +51525,12 @@ class XMLParser {
      */
     parse(xmlData, validationOption) {
         if (typeof xmlData !== "string" && xmlData.toString) {
-            xmlData = xmlData.toString();
+            if (xmlData instanceof Uint8Array &&
+                !(typeof Buffer !== "undefined" && Buffer.isBuffer(xmlData))) {
+                xmlData = new TextDecoder("utf-8", { ignoreBOM: true }).decode(xmlData);
+            } else {
+                xmlData = xmlData.toString();
+            }
         } else if (typeof xmlData !== "string") {
             throw new Error("XML data is accepted in String or Bytes[] form.")
         }
@@ -50774,6 +51604,37 @@ function escapeAttribute(val) {
   return valToStr(val).replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 
+/**
+ * Resolve a tag or attribute name through sanitizeName if configured.
+ * Validation via xml-naming's qName is performed first; the sanitizeName
+ * callback is invoked only when the name is invalid. If sanitizeName is
+ * false (default), no validation occurs and the name is used as-is.
+ *
+ * @param {string}  name        - raw name from the JS object
+ * @param {boolean} isAttribute - true when resolving an attribute name
+ * @param {object}  options
+ * @param {Matcher} matcher     - current matcher state (readonly from callback perspective)
+ * @param {function} qNameValidator - function to validate tag names
+ */
+
+function resolveName(name, isAttribute, options, matcher, validator) {
+  if (!options.sanitizeName) return name;
+
+  // Processing-instruction names: validate the part after the leading "?"
+  const isPI = !isAttribute && name[0] === '?';
+  const bare = isPI ? name.slice(1) : name;
+
+  if (validator(bare)) return name;
+
+  const result = options.sanitizeName(bare, { isAttribute, matcher: matcher.readOnly() });
+
+  // Never trust the callback's output
+  if (typeof result !== 'string' || !validator(result)) {
+    throw new Error(`sanitizeName returned an invalid XML name for "${bare}"`);
+  }
+  return isPI ? '?' + result : result;
+}
+
 const EOL = "\n";
 
 /**
@@ -50796,24 +51657,6 @@ function detectXmlVersionFromArray(jArray, options) {
         }
     }
     return '1.0';
-}
-
-/**
- * Resolve a tag or attribute name through sanitizeName if configured.
- * Validation via xml-naming's qName is performed first; the sanitizeName
- * callback is invoked only when the name is invalid. If sanitizeName is
- * false (default), no validation occurs and the name is used as-is.
- *
- * @param {string}  name        - raw name from the JS object
- * @param {boolean} isAttribute - true when resolving an attribute name
- * @param {object}  options
- * @param {Matcher} matcher     - current matcher state (readonly from callback perspective)
- * @param {function} qNameValidator - function to validate tag names
- */
-function resolveTagName$1(name, isAttribute, options, matcher, qNameValidator) {
-    if (!options.sanitizeName) return name;
-    if (qNameValidator(name)) return name;
-    return options.sanitizeName(name, { isAttribute, matcher: matcher.readOnly() });
 }
 
 /**
@@ -50876,13 +51719,13 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
         // are not user-supplied XML element names.
         const isSpecialName = rawTagName === options.textNodeName
             || rawTagName === options.cdataPropName
-            || rawTagName === options.commentPropName
-            || rawTagName[0] === '?';
+            || rawTagName === options.commentPropName;
+        //|| rawTagName[0] === '?';
 
         // Resolve tag name (may transform it; may throw for invalid names)
         const tagName = isSpecialName
             ? rawTagName
-            : resolveTagName$1(rawTagName, false, options, matcher, qNameValidator);
+            : resolveName(rawTagName, false, options, matcher, qNameValidator);
 
         // Extract attributes from ":@" property
         const attrValues = extractAttributeValues(tagObj[":@"], options);
@@ -50947,7 +51790,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
         // If this is a stopNode, get raw content without processing
         let tagValue;
         if (isStopNode) {
-            tagValue = getRawContent(tagObj[rawTagName], options);
+            tagValue = getRawContent(tagObj[rawTagName], options, matcher.getDepth());
         } else {
             tagValue = arrToStr(tagObj[rawTagName], options, newIdentation, matcher, stopNodeExpressions, qNameValidator);
         }
@@ -51004,7 +51847,10 @@ function extractAttributeValues(attrMap, options) {
  * Extract raw content from a stopNode without any processing
  * This preserves the content exactly as-is, including special characters
  */
-function getRawContent(arr, options) {
+function getRawContent(arr, options, depth = 0) {
+    if (options.maxNestedTags && depth > options.maxNestedTags) {
+        throw new Error("Maximum nested tags exceeded");
+    }
     if (!Array.isArray(arr)) {
         // Non-array values return as-is
         if (arr !== undefined && arr !== null) {
@@ -51033,7 +51879,7 @@ function getRawContent(arr, options) {
         } else if (tagName) {
             // Nested tags within stopNode — no sanitizeName, content is raw
             const attStr = attr_to_str_raw(item[":@"], options);
-            const nestedContent = getRawContent(item[tagName], options);
+            const nestedContent = getRawContent(item[tagName], options, depth + 1);
 
             if (!nestedContent || nestedContent.length === 0) {
                 content += `<${tagName}${attStr}/>`;
@@ -51088,7 +51934,7 @@ function attr_to_str(attrMap, options, isStopNode, matcher, qNameValidator) {
             const cleanAttrName = attr.substr(options.attributeNamePrefix.length);
             const resolvedAttrName = isStopNode
                 ? cleanAttrName  // stopNodes are raw — skip sanitizeName for attr names too
-                : resolveTagName$1(cleanAttrName, true, options, matcher, qNameValidator);
+                : resolveName(cleanAttrName, true, options, matcher, qNameValidator);
 
             let attrVal;
             if (isStopNode) {
@@ -51264,24 +52110,6 @@ function detectXmlVersionFromObj(jObj, options) {
   return '1.0';
 }
 
-/**
- * Resolve a tag or attribute name through sanitizeName if configured.
- * Validation via xml-naming's qName is performed first; the sanitizeName
- * callback is invoked only when the name is invalid. If sanitizeName is
- * false (default), no validation occurs and the name is used as-is.
- *
- * @param {string}  name        - raw name from the JS object
- * @param {boolean} isAttribute - true when resolving an attribute name
- * @param {object}  options
- * @param {Matcher} matcher     - current matcher state (readonly from callback perspective)
- * @param {function} qNameValidator - function to validate tag names
- */
-function resolveTagName(name, isAttribute, options, matcher, qNameValidator) {
-  if (!options.sanitizeName) return name;
-  if (qNameValidator(name)) return name;
-  return options.sanitizeName(name, { isAttribute, matcher: matcher.readOnly() });
-}
-
 Builder.prototype.build = function (jObj) {
   if (this.options.preserveOrder) {
     return toXml(jObj, this.options);
@@ -51322,12 +52150,12 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
       || key === this.options.cdataPropName
       || key === this.options.commentPropName
       || (this.options.attributesGroupName && key === this.options.attributesGroupName)
-      || this.isAttribute(key)
-      || key[0] === '?';
+      || this.isAttribute(key);
+    //|| key[0] === '?';
 
     const resolvedKey = isSpecialKey
       ? key
-      : resolveTagName(key, false, this.options, matcher, qNameValidator);
+      : resolveName(key, false, this.options, matcher, qNameValidator);
 
     if (typeof jObj[key] === 'undefined') {
       // supress undefined node only if it is not an attribute
@@ -51352,7 +52180,7 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
       const attr = this.isAttribute(key);
       if (attr && !this.ignoreAttributesFn(attr, jPath)) {
         // Resolve the attribute name through sanitizeName
-        const resolvedAttr = resolveTagName(attr, true, this.options, matcher, qNameValidator);
+        const resolvedAttr = resolveName(attr, true, this.options, matcher, qNameValidator);
         attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key]), isCurrentStopNode);
       } else if (!attr) {
         //tag value
@@ -51440,7 +52268,7 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
         const L = Ks.length;
         for (let j = 0; j < L; j++) {
           // Resolve attribute names inside attributesGroupName
-          const resolvedAttr = resolveTagName(Ks[j], true, this.options, matcher, qNameValidator);
+          const resolvedAttr = resolveName(Ks[j], true, this.options, matcher, qNameValidator);
           attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key][Ks[j]]), isCurrentStopNode);
         }
       } else {
@@ -51473,7 +52301,7 @@ function processTextOrObjNode(object, key, level, matcher, qNameValidator) {
 
   if (isStopNode) {
     // For stopNodes, build raw content without entity encoding
-    const rawContent = this.buildRawContent(object);
+    const rawContent = this.buildRawContent(object, matcher.getDepth());
     const attrStr = this.buildAttributesForStopNode(object);
     matcher.pop();
     return this.buildObjectNode(rawContent, key, attrStr, level);
@@ -51529,7 +52357,10 @@ Builder.prototype.extractAttributes = function (obj) {
 };
 
 // Build raw content for stopNode without entity encoding
-Builder.prototype.buildRawContent = function (obj) {
+Builder.prototype.buildRawContent = function (obj, depth = 0) {
+  if (this.options.maxNestedTags && depth >= this.options.maxNestedTags) {
+    throw new Error("Maximum nested tags exceeded");
+  }
   if (typeof obj === 'string') {
     return obj; // Already a string, return as-is
   }
@@ -51563,7 +52394,7 @@ Builder.prototype.buildRawContent = function (obj) {
         if (typeof item === 'string' || typeof item === 'number') {
           content += `<${key}>${item}</${key}>`;
         } else if (typeof item === 'object' && item !== null) {
-          const nestedContent = this.buildRawContent(item);
+          const nestedContent = this.buildRawContent(item, depth + 1);
           const nestedAttrs = this.buildAttributesForStopNode(item);
           if (nestedContent === '') {
             content += `<${key}${nestedAttrs}/>`;
@@ -51574,7 +52405,7 @@ Builder.prototype.buildRawContent = function (obj) {
       }
     } else if (typeof value === 'object' && value !== null) {
       // Nested object
-      const nestedContent = this.buildRawContent(value);
+      const nestedContent = this.buildRawContent(value, depth + 1);
       const nestedAttrs = this.buildAttributesForStopNode(value);
       if (nestedContent === '') {
         content += `<${key}${nestedAttrs}/>`;
